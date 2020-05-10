@@ -106,7 +106,7 @@ class StateStack:
                     else:
                         color_idx = 0 if pawn.color[0] == "B" else 1
                     
-                    if isinstance(pawn , King):
+                    if isisinstance(pawn , King):
                         ret[row][column][color_idx + idx + 2] = 1
                     else:
                         ret[row][column][color_idx + idx] = 1

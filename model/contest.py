@@ -1,8 +1,12 @@
-from .game import Player, Mode, GameState
+from .Actors import Player
+from .Game import Mode
+from .InternationalGame import InternationalGame
 import datetime
+
 
 class Constraint:
     "An abstract interface"
+
     def is_valid(self, player: Player) -> bool:
         pass
 
@@ -25,12 +29,12 @@ class NameConstraint(Constraint):
             if player.name == name:
                 return True
         return False
-        
-        
+
+
 class RatingConstraint(Constraint):
-    def __init__(self, min=-1e9, max=1e9):
-        self.min = min
-        self.max = max
+    def __init__(self, mn=-1e9, mx=1e9):
+        self.min = mn
+        self.max = mx
 
     def is_valid(self, player: Player):
         return self.min <= player.rate <= self.max
@@ -41,7 +45,7 @@ class DateConstraint(Constraint):
         self.date = date
 
     def is_valid(self, player):
-        return  datetime.date.today() <= self.date
+        return datetime.date.today() <= self.date
 
 
 class Contest:
@@ -50,12 +54,12 @@ class Contest:
         self.name = name
         self.date = date
         self.mode = mode
-        last_game_id = 1
+        self.last_game_id = 1
         self.games = []
         self.constraints = []
         self.participants = []
         self.current_game = 0
-    
+
     def add_new_player(self, player: Player) -> None:
         for constraint in self.constraints:
             if not constraint.is_valid(player):
@@ -69,10 +73,10 @@ class Contest:
             minimizer = self.participants[i]
 
             coming_date = self.date
-            date += datetime.timedelta(days=i - 1)
+            self.date += datetime.timedelta(days=i - 1)
 
             if self.mode == Mode.INTERNATIONAL:
-                self.games.append(GameState(maximizer, minimizer))
+                self.games.append(InternationalGame(self.last_game_id + 1, maximizer, minimizer, coming_date))
 
     def get_qualified_players(self):
         qualified_participants = []
@@ -89,7 +93,6 @@ class Contest:
 
     def is_end(self):
         return len(self.participants) <= 1
-        pass
 
     def mange(self):
         self.distribute()
@@ -100,8 +103,11 @@ class Contest:
 
         self.current_game = 0
         while not self.is_round_end():
-            game = self.games[current_game]
-            current_game += 1
-            # controle the game
+            game = self.games[self.current_game]
+            self.current_game += 1
+            # control the game
         self.participants = self.get_qualified_players()
         self.mange()
+
+    def add_constraints(self, constraints):
+        self.constraints.extend(constraints)

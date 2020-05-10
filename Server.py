@@ -6,7 +6,7 @@ sio = socketio.AsyncServer()
 # Creates a new Aiohttp Web Application
 app = web.Application()
 # Binds our Socket.IO server to our Web App
-# instance
+# isinstance
 sio.attach(app)
 
 # we can define aiohttp endpoints just as we normally

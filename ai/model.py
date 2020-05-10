@@ -1,9 +1,8 @@
-from keras.models import Sequential, load_model, Model
-from keras.layers import Input, Dense, Conv2D, Flatten, BatchNormalization, Activation, LeakyReLU, add
-from keras.optimizers import SGD, Adam
-from keras import regularizers
+from tensorflow.keras.models import Sequential, load_model, Model
+from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, BatchNormalization, Activation, LeakyReLU, add
+from tensorflow.keras.optimizers import SGD, Adam
+from tensorflow.keras import regularizers
 import tensorflow as tf
-
 run_folder = 'run/'
 run_archive_folder = './run_archive/'
 
@@ -129,6 +128,3 @@ class NeuralNetwork():
 
     def write(self, version):
         self.model.save(run_folder + 'models/V(' + f"{version})" + '.h5')
-
-    def convert_to_model_input(self, game_state):
-        pass

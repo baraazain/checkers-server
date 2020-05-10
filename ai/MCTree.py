@@ -97,12 +97,12 @@ class MCTree:
             value = leaf.state_stack.head.get_value()
             return value if player.pov == MAXIMIZER else -value
         else:
-            value, probs, actions_cats, possible_action, possible_states = player.get_preds(leaf.state_stack)
-            probs = probs[actions_cats]
-            for idx, (action, action_id, new_state) in enumerate(zip(possible_action, actions_cats, possible_states)):
+            value, probs, actions_cats, possible_actions, possible_states = player.get_preds(leaf.state_stack)
+            
+            for action, action_id, new_state in zip(possible_actions, actions_cats, possible_states):
                 new_state_stack = deepcopy(leaf.state_stack)
                 new_state_stack.push(new_state)
-                child = Node(new_state_stack, leaf, probs[idx])
+                child = Node(new_state_stack, leaf, probs[action_id])
                 edge = Edge(child, action, action_id)
                 leaf.edges[action_id] = edge
             return value

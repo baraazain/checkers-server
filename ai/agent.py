@@ -1,4 +1,4 @@
-from .MCTreeSearch import MCTreeSearch, Node, Edge
+from .MCTree import MCTree, Node, Edge
 from .utils import ActionEncoder, get_action_space, StateStack, to_label, mirror_action
 from .config import MAXIMIZER
 from model.actors import Agent
@@ -14,7 +14,7 @@ class AlphaZero(Agent):
         self.pov = pov
         self.cpuct = cpuct
         
-        self.mcts: MCTreeSearch = None
+        self.mcts: MCTree = None
         
         self.action_encoder = ActionEncoder()
         action_space = np.array(get_action_space(10, 10))
@@ -78,7 +78,7 @@ class AlphaZero(Agent):
         return self.mcts.root.edges[action_id].action, action_id, self.mcts.root.get_state(), value, pi
         
     def build_mcts(self, state_stack):
-        self.mcts = MCTreeSearch(Node(state_stack,None, 1), self.cpuct)
+        self.mcts = MCTree(Node(state_stack,None, 1), self.cpuct)
     
     def update_root(self, action_id):
         if not self.mcts.root.is_leaf():
