@@ -1,4 +1,5 @@
-from model.game import GameState, King, Position, Action
+from model.Game import Action, Game
+from model.Piece import *
 from .config import MAXIMIZER
 from collections import deque
 from copy import deepcopy
@@ -6,22 +7,6 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 
-def mirror_coordinates(board_length, board_width, x, y):
-        return board_length + 1 - x, board_width + 1 - y
-
-    
-def mirror_action(action: Action, board_length=10, board_width=10):
-    src_mirror_x, src_mirror_y = mirror_coordinates(board_length, board_width, 
-                                                    action.src.row + 1, action.src.column + 1)
-    src_mirror_x -= 1
-    src_mirror_y -= 1
-
-    dst_mirror_x, dst_mirror_y = mirror_coordinates(board_length, board_width, 
-                                                    action.dst.row + 1, action.dst.column + 1)
-    dst_mirror_x -= 1
-    dst_mirror_y -= 1
-        
-    return Action(Position(src_mirror_x, src_mirror_y), Position(dst_mirror_x, dst_mirror_y), action.player)
 
 
 def to_label(action: Action):
@@ -64,52 +49,70 @@ def get_action_space(board_length, board_width):
                         all_list_action.append(action)
     return all_list_action
 
+
+class GameState:
+    """description of class"""
+    def __init__(self, game: Game):
+        self.white_pieces = game.whitePieces
+        self.black_pieces = game.blackPieces
+        self.turn = game.currentTurn
+        self.board_length = game.grid.n
+        self.board_width = game.grid.m
+        self.terminal = game.end()
+        self.cls = game.__class__
+
+    def get_all_possible_states(self):
+        states = self.cls.build(self.white_pieces, self.black_pieces, self.turn).getAllPossibleStates()
+        ret = [GameState(state) for state in states]
+        return ret
+    
+    def get_player_turn(self):
+        return self.turn
+
+    def is_terminal(self):
+        return self.terminal
+
+    def get_value(self):
+        if len(self.white_pieces) == 0:
+            return -1
+        if len(self.black_pieces) == 0:
+            return 1
+        return 0
+
+
 class StateStack:
     def __init__(self,inital_state: GameState):
         self.head = inital_state
         self.max_len = 5 # turns history
-        self.max_features = 4 # pieces planes (2 men) (2 kings)
+        self.max_features = 5 # pieces planes (2 men) (2 kings) (1 movable pieces)
         self.dq = deque(maxlen=self.max_len)
         self.dq.append(inital_state)
-        
-
-    def mirror_pieces(self, all_pieces):
-        ret = []
-        for piece in all_pieces:
-            if not piece.dead:
-                x, y = mirror_coordinates(self.head.board_length, self.head.board_width,
-                                               piece.position.row + 1, piece.position.column + 1)
-                piece_copy = deepcopy(piece)
-                piece_copy.position = Position(x - 1, y - 1)
-                ret.append(piece)
-        return ret
-    
+            
     def get_input_shape(self):
         return (self.head.board_length, self.head.board_width, self.max_features * self.max_len)
 
     def get_deep_representation_stack(self):
         ret = np.zeros((self.head.board_length, self.head.board_width, self.max_features * self.max_len))
         for idx, state in enumerate(reversed(self.dq)):
-            
-            pawns = state.white_pawn_list + state.black_pawn_list
-            
-            if self.head.get_player_turn() != MAXIMIZER:
-                pawns = self.mirror_pieces(pawns)
 
+            pieces = state.white_pieces + state.black_pieces
+            
             idx *= self.max_features
-            for pawn in pawns:
-                if not pawn.dead:
-                    row = pawn.position.row
-                    column = pawn.position.column
-                    if self.head.get_player_turn() == MAXIMIZER:
-                        color_idx = 0 if pawn.color[0] == "W" else 1
-                    else:
-                        color_idx = 0 if pawn.color[0] == "B" else 1
+            for piece in pieces:
+                    row = piece.cell.r
+                    column = piece.cell.c
+                    color_idx = 0 if piece.color == Color.WHITE else 1
                     
-                    if isisinstance(pawn , King):
+                    if piece.typ == Type.KING:
                         ret[row][column][color_idx + idx + 2] = 1
                     else:
                         ret[row][column][color_idx + idx] = 1
+
+                    if state.Turn == 1 and piece.color == Color.WHITE:
+                        ret[row][column][idx + 4] = 1
+                    if state.Turn == 2 and piece.color == Color.BLACK:
+                        ret[row][column][idx + 4] = 1
+            
         return ret
     
     def push(self, state):
@@ -118,6 +121,7 @@ class StateStack:
 
     def __repr__(self):
         return self.dq.__repr__()
+
 
 class ActionEncoder():
     def __init__(self):
@@ -168,7 +172,7 @@ class SampleBuilder:
         self.moves.append({'state':state_stack, 'policy':pi})
     def commit_sample(self, value, pov):
         for sample in self.moves:
-            sample['value'] = value if sample['state'].head.get_player_turn() == pov else -value
+            sample['value'] = value if sample['state'].head.turn == pov else -value
             self.samples.append(sample)
         self.moves.clear()
 

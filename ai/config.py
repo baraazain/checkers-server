@@ -1,5 +1,5 @@
 #### SELF PLAY
-MAXIMIZER = 0
+MAXIMIZER = 1
 EPISODES = 1
 MCTS_SIMS = 50
 TURNS_UNTIL_TAU0 = 10 # turn on which it starts playing deterministically

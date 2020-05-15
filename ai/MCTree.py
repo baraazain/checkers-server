@@ -1,6 +1,6 @@
 from .config import EPSILON, ALPHA, MAXIMIZER
 from .utils import StateStack
-from model.game import Action
+from model.Game import Action
 from copy import deepcopy
 import numpy as np
 
@@ -39,6 +39,7 @@ class Edge:
     def get_action(self):
         return self.action
 
+
 class MCTree:
     def __init__(self, root, cpuct):
         self.root = root
@@ -50,14 +51,13 @@ class MCTree:
         while not current_node.is_leaf():
             max_puct = -1e9
 
-            epsilon = EPSILON
             noise = np.random.dirichlet([ALPHA] * len(current_node.get_edges()))
 
             nb = current_node.stats['N']
 
             for idx, edge in enumerate(current_node.edges.values()):
                 if current_node is self.root:
-                    probability = (epsilon * edge.get_child().stats['P'] + (1 - epsilon) * noise[idx])
+                    probability = (EPSILON * edge.get_child().stats['P'] + (1 - EPSILON) * noise[idx])
                 else:
                     probability = edge.get_child().stats['P']
 

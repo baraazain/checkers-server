@@ -6,6 +6,16 @@ from copy import deepcopy
 
 
 class InternationalGame(Game):
+    @classmethod
+    def build(cls, whitePieces: list, blackPieces:list, turn: int):
+        game = cls(-1, None, None, None)
+        game.whitePieces = deepcopy(whitePieces)
+        game.blackPieces = deepcopy(blackPieces)
+        game.currentTurn = turn
+        pieces = game.whitePieces + game.blackPieces
+        for piece in pieces:
+            game.grid[piece.cell.r][piece.cell.c] = piece
+        return game
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,25 +42,25 @@ class InternationalGame(Game):
     """
 
     def correctKingWalk(self, action: Action):
-        src: Cell = action.source
-        dist: Cell = action.destination
+        src: Cell = action.src
+        dst: Cell = action.dst
         srcR = src.r
         srcC = src.c
-        distR = dist.r
-        distC = dist.c
+        dstR = dst.r
+        dstC = dst.c
         if src.getType() != Type.KING:
             return False
         if src.piece is None:
             return False
-        if dist.piece is not None:
+        if dst.piece is not None:
             return False
-        if abs(srcR - distR) != abs(srcC - distC):
+        if abs(srcR - dstR) != abs(srcC - dstC):
             return False
-        dirR = (distR - srcR) // abs(srcR - distR)
-        dirC = (distC - srcC) // abs(srcC - distC)
+        dirR = (dstR - srcR) // abs(srcR - dstR)
+        dirC = (dstC - srcC) // abs(srcC - dstC)
         curR = srcR + dirR
         curC = srcC + dirC
-        while curR != distR:
+        while curR != dstR:
             if self.grid[curR][curC].piece is not None:
                 return False
             curR += dirR
@@ -64,24 +74,24 @@ class InternationalGame(Game):
     """
 
     def correctKingEat(self, action: Action):
-        src: Cell = action.source
-        dist: Cell = action.destination
+        src: Cell = action.src
+        dst: Cell = action.dst
         srcR = src.r
         srcC = src.c
-        distR = dist.r
-        distC = dist.c
+        dstR = dst.r
+        dstC = dst.c
         if src.piece is None:
             return False
-        if dist.piece is not None:
+        if dst.piece is not None:
             return False
-        if abs(srcR - distR) != abs(srcC - distC):
+        if abs(srcR - dstR) != abs(srcC - dstC):
             return False
-        dirR = (distR - srcR) // abs(srcR - distR)
-        dirC = (distC - srcC) // abs(srcC - distC)
+        dirR = (dstR - srcR) // abs(srcR - dstR)
+        dirC = (dstC - srcC) // abs(srcC - dstC)
         curR = srcR + dirR
         curC = srcC + dirC
         cnt = 0
-        while curR != distR:
+        while curR != dstR:
             if self.grid[curR][curC].getColor() == src.getColor():
                 return False
             if self.grid[curR][curC].piece is not None:
@@ -97,12 +107,12 @@ class InternationalGame(Game):
     """
 
     def correctWalk(self, action: Action):
-        src: Cell = action.source
-        dist: Cell = action.destination
+        src: Cell = action.src
+        dst: Cell = action.dst
 
-        if not self.grid.ok(dist.r, dist.c):
+        if not self.grid.ok(dst.r, dst.c):
             return False
-        if dist.piece is not None:
+        if dst.piece is not None:
             return False
         if src.piece is None:
             return False
@@ -116,14 +126,14 @@ class InternationalGame(Game):
             for i in range(0, 2, 1):
                 nr = r + ar[i]
                 nc = c + ac[i]
-                if nr == dist.r and nc == dist.c:
+                if nr == dst.r and nc == dst.c:
                     return True
         elif src.getColor() == Color.BLACK:
             ar = [1, 1]
             for i in range(0, 2, 1):
                 nr = r + ar[i]
                 nc = c + ac[i]
-                if nr == dist.r and nc == dist.c:
+                if nr == dst.r and nc == dst.c:
                     return True
         return False
 
@@ -134,22 +144,22 @@ class InternationalGame(Game):
     """
 
     def correctEat(self, action: Action):
-        src: Cell = action.source
-        dist: Cell = action.destination
+        src: Cell = action.src
+        dst: Cell = action.dst
         srcR = src.r
         srcC = src.c
-        distR = dist.r
-        distC = dist.c
+        dstR = dst.r
+        dstC = dst.c
         if src.getType() == Type.KING:
             return self.correctKingEat(action)
         if src.piece is None:
             return False
-        if dist.piece is not None:
+        if dst.piece is not None:
             return False
-        if abs(srcR - distR) != 2 or abs(srcC - distC) != 2:
+        if abs(srcR - dstR) != 2 or abs(srcC - dstC) != 2:
             return False
-        middleR = (srcR + distR) // 2
-        middleC = (srcC + distC) // 2
+        middleR = (srcR + dstR) // 2
+        middleC = (srcC + dstC) // 2
         middleCell = self.grid[middleR][middleC]
         if middleCell.piece is None:
             return False
@@ -170,8 +180,8 @@ class InternationalGame(Game):
         while curR > 0 and curC > 0:
             curR -= 1
             curC -= 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctWalk(action):
                 return True
         curR = src.r
@@ -179,8 +189,8 @@ class InternationalGame(Game):
         while curR < 9 and curC < 9:
             curR += 1
             curC += 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctWalk(action):
                 return True
         return False
@@ -198,8 +208,8 @@ class InternationalGame(Game):
         while curR < 9 and curC > 0:
             curR += 1
             curC -= 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctWalk(action):
                 return True
         curR = src.getR()
@@ -207,8 +217,8 @@ class InternationalGame(Game):
         while curR > 0 and curC < 9:
             curR += 1
             curC -= 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctWalk(action):
                 return True
         return False
@@ -226,8 +236,8 @@ class InternationalGame(Game):
         while curR > 0 and curC > 0:
             curR -= 1
             curC -= 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctEat(action):
                 return True
         curR = src.r
@@ -235,8 +245,8 @@ class InternationalGame(Game):
         while curR < 9 and curC < 9:
             curR += 1
             curC += 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctEat(action):
                 return True
         return False
@@ -254,8 +264,8 @@ class InternationalGame(Game):
         while curR < 9 and curC > 0:
             curR += 1
             curC -= 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctEat(action):
                 return True
         curR = src.r
@@ -263,8 +273,8 @@ class InternationalGame(Game):
         while curR > 0 and curC < 9:
             curR += 1
             curC -= 1
-            dist = self.grid[curR][curC]
-            action = Action(src, dist, None)
+            dst = self.grid[curR][curC]
+            action = Action(src, dst, None)
             if self.correctEat(action):
                 return True
         return False
@@ -323,8 +333,8 @@ class InternationalGame(Game):
         # (stR, stC) represents the first cell in the secondary diagonal
         actions = []
         while stR < 10 and stC >= 0:
-            dist = self.grid[stR][stC]
-            action = Action(src, dist, currentPlayer)
+            dst = self.grid[stR][stC]
+            action = Action(src, dst, currentPlayer)
             if self.correctWalk(action):
                 actions.append(action)
             # next cell in the secondary diagonal is (i+1, j-1)
@@ -349,8 +359,8 @@ class InternationalGame(Game):
         stC = c - mn
         actions = []
         while stR < 10 and stC < 10:
-            dist = self.grid[stR][stC]
-            action = Action(src, dist, currentPlayer)
+            dst = self.grid[stR][stC]
+            action = Action(src, dst, currentPlayer)
             if self.correctEat(action):
                 actions.append(action)
             stR += 1
@@ -374,8 +384,8 @@ class InternationalGame(Game):
         stC = c + mn
         actions = []
         while stR < 10 and stC >= 0:
-            dist = self.grid[stR][stC]
-            action = Action(src, dist, currentPlayer)
+            dst = self.grid[stR][stC]
+            action = Action(src, dst, currentPlayer)
             if self.correctEat(action):
                 actions.append(action)
             stR += 1
@@ -431,12 +441,12 @@ class InternationalGame(Game):
     """
 
     def moveLikeKing(self, action: Action):
-        srcR = action.source.r
-        srcC = action.source.c
-        dstR = action.destination.r
-        dstC = action.destination.c
-        src: Cell = action.source
-        dst: Cell = action.destination
+        srcR = action.src.r
+        srcC = action.src.c
+        dstR = action.dst.r
+        dstC = action.dst.c
+        src: Cell = action.src
+        dst: Cell = action.dst
 
         # we remove the src piece and add the dst piece
         # remove the src piece
@@ -482,8 +492,8 @@ class InternationalGame(Game):
     """
 
     def isLegalAction(self, action: Action):
-        r = action.source.r
-        c = action.source.c
+        r = action.src.r
+        c = action.src.c
         # Wrong turn
         if self.currentTurn == 1 and self.grid[r][c].getColor() != Color.WHITE:
             return False
@@ -505,8 +515,8 @@ class InternationalGame(Game):
         # we store the copy move in the moves list not the given move
         copyAction = deepcopy(action)
         self.actions.append(copyAction)
-        src: Cell = action.source
-        dst: Cell = action.destination
+        src: Cell = action.src
+        dst: Cell = action.dst
         srcR = src.r
         srcC = src.c
         dstR = dst.r

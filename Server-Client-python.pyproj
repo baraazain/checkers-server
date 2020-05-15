@@ -22,29 +22,21 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ai\agent.py" />
     <Compile Include="ai\__init__.py" />
     <Compile Include="ai\MCTree.py" />
     <Compile Include="ai\config.py" />
     <Compile Include="controller.py" />
     <Compile Include="ai\model.py" />
     <Compile Include="ai\utils.py" />
-    <Compile Include="model\BotPlayer.py" />
-    <Compile Include="model\Cell.py" />
-    <Compile Include="model\Checkers.py" />
-    <Compile Include="model\ConsolePlayer.py" />
-    <Compile Include="model\Content.py" />
+    <Compile Include="model\Actors.py" />
     <Compile Include="model\Contest.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="model\Game.py" />
     <Compile Include="model\Grid.py" />
     <Compile Include="model\InternationalGame.py" />
-    <Compile Include="model\MinMaxBotPlayer.py" />
-    <Compile Include="model\Mode.py" />
-    <Compile Include="model\Action.py" />
     <Compile Include="model\Piece.py" />
-    <Compile Include="model\Player.py" />
-    <Compile Include="model\Type.py" />
     <Compile Include="model\__init__.py">
       <SubType>Code</SubType>
     </Compile>

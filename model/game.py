@@ -14,8 +14,8 @@ class Action:
 
     def __init__(self, source, destination, player):
         self.id = -1
-        self.source = source
-        self.destination = destination
+        self.src = source
+        self.dst = destination
         self.player = player
         self.eat = None
 
@@ -23,17 +23,22 @@ class Action:
         return self.eat is not None
 
     def __str__(self):
-        ret = "(" + str(self.source.r + 1) + ',' + str(self.source.c + 1) + ")"
+        ret = "(" + str(self.src.r + 1) + ',' + str(self.src.c + 1) + ")"
         ret += "------->>>"
-        ret += "(" + str(self.destination.r + 1) + "," + str(self.destination.c + 1) + ")"
+        ret += "(" + str(self.dst.r + 1) + "," + str(self.dst.c + 1) + ")"
 
     def __eq__(self, other):
         if isinstance(other, Action):
-            return self.source == other.source and self.destination == other.destination and self.id == other.id
+            return self.src == other.src and self.dst == other.dst and self.id == other.id
         return False
 
 
 class Game(ABC):
+    
+    @classmethod
+    def build(cls, whitePieces, blackPieces, turn):
+        return None
+
     def __init__(self, id_key, player1, player2, date):
         self.id = id_key
         self.player1 = player1
@@ -182,7 +187,7 @@ class Game(ABC):
             while self.actions[len(self.actions) - 1].isEat() \
                     and self.canEat(self.actions[len(self.actions) - 1].distination):
                 self.applyAction(self.player2.act(self))
-        self.currentTurn = 3 - self.currentTurn
+        #self.currentTurn = 3 - self.currentTurn
 
     @abstractmethod
     def undo(self):

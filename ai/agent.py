@@ -1,8 +1,8 @@
 from .MCTree import MCTree, Node, Edge
-from .utils import ActionEncoder, get_action_space, StateStack, to_label, mirror_action
+from .utils import ActionEncoder, get_action_space, StateStack, to_label
 from .config import MAXIMIZER
-from model.actors import Agent
-from model.game import GameState, Action
+from model.Actors import Agent
+from model.Game import Action
 from copy import deepcopy
 import numpy as np
 
@@ -28,12 +28,8 @@ class AlphaZero(Agent):
         logits = preds[1][0]
 
         possible_actions, possible_states = state_stack.head.get_all_possible_states()
-        if state_stack.head.get_player_turn() != MAXIMIZER:
-            actions = list(map(mirror_action, possible_actions))
-        else:
-            actions = possible_actions
 
-        actions_labels = np.array(list(map(to_label, actions)))
+        actions_labels = np.array(list(map(to_label, possible_actions)))
         actions_cats = self.action_encoder.label_transform(actions_labels)
 
         mask = np.ones_like(logits, dtype=bool)
