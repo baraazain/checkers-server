@@ -3,13 +3,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>77fd5706-a513-4003-928c-4bb06072cbfe</ProjectGuid>
-    <ProjectHome>.</ProjectHome>
+    <ProjectHome>
+    </ProjectHome>
     <StartupFile>controller.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>Server-Client-python</Name>
+    <Name>Server-py</Name>
     <RootNamespace>Server-Client-python</RootNamespace>
     <InterpreterId>CondaEnv|CondaEnv|ai_env</InterpreterId>
   </PropertyGroup>

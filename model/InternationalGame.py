@@ -14,11 +14,13 @@ class InternationalGame(Game):
         game.currentTurn = turn
         pieces = game.whitePieces + game.blackPieces
         for piece in pieces:
-            game.grid[piece.cell.r][piece.cell.c] = piece
+            game.grid[piece.cell.r][piece.cell.c].piece = piece
+            piece.cell = game.grid[piece.cell.r][piece.cell.c]
         return game
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.grid = Grid(10, 10)
 
     # initialize the grid and add pieces to their respective array
     def init(self):
@@ -406,7 +408,6 @@ class InternationalGame(Game):
     # @return all possible walks from the current state
     def getAllPossibleWalks(self):
         actions = []
-        print(self.currentTurn)
         if self.currentTurn == 1:
             # iterate over all white pieces and get the moves from the pieces
             for piece in self.whitePieces:
@@ -417,7 +418,6 @@ class InternationalGame(Game):
             for piece in reversed(self.blackPieces):
                 actions.extend(self.getAllPossiblePrimaryWalks(piece, self.player2))
                 actions.extend(self.getAllPossibleSecondaryWalks(piece, self.player2))
-            print(len(actions))
         return actions
 
     # @return all possible eats from current states

@@ -1,5 +1,5 @@
 from .Grid import Cell
-
+import json
 
 class Color:
     WHITE = "WHITE"
@@ -11,7 +11,7 @@ class Type:
     PAWN = "PAWN"
 
 
-class Piece:
+class Piece(json.JSONEncoder):
     def __init__(self, cell: Cell, typ, color):
         self.color = color
         self.type = typ
@@ -22,3 +22,9 @@ class Piece:
 
     def __str__(self):
         return "(" + self.cell.r + "," + self.cell.c + "," + self.color + ")"
+
+    def default(self, obj):
+        if isinstance(obj, Piece):
+            return [obj.color, obj.type, json.dumps(obj.cell)]
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)

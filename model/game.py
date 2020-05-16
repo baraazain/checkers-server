@@ -45,7 +45,7 @@ class Game(ABC):
         self.player2 = player2
         self.date = date
 
-        self.grid = Grid(10, 10)
+        self.grid = None
         self.actions = []
         self.blackPieces = []
         self.whitePieces = []
