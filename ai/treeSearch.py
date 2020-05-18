@@ -1,6 +1,6 @@
 from .config import EPSILON, ALPHA, MAXIMIZER
 from .utils import StateStack
-from model.Game import Action
+from model.game import Action
 from copy import deepcopy
 import numpy as np
 

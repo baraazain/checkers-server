@@ -1,4 +1,4 @@
-from .Grid import Cell
+from .grid import Cell
 import json
 
 class Color:

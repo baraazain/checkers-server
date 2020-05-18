@@ -1,6 +1,6 @@
-from .Actors import Player
-from .Game import Mode
-from .InternationalGame import InternationalGame
+from .actors import Player
+from .game import Mode
+from .internationalGame import InternationalGame
 import datetime
 
 

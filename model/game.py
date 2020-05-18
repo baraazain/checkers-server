@@ -1,7 +1,7 @@
 from copy import deepcopy
 
-from .Grid import Grid
-from .Piece import *
+from .grid import Grid
+from .piece import *
 from abc import ABC, abstractmethod
 
 

@@ -1,8 +1,7 @@
-from .MCTree import MCTree, Node, Edge
+from .treeSearch import *
 from .utils import ActionEncoder, get_action_space, StateStack, to_label
-from .config import MAXIMIZER
-from model.Actors import Agent
-from model.Game import Action
+from model.actors import Agent
+from model.game import Action
 from copy import deepcopy
 import numpy as np
 

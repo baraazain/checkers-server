@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .Game import Action
+from .game import Action
 from random import randrange
 
 
@@ -56,7 +56,7 @@ class MiniMaxAgent(Agent, ABC):
         self.maximum_depth = maximum_depth
 
     def max(self, alpha, beta, depth, game):
-        if depth == self.maximum_depth or game.end() is not None:
+        if depth == self.maximum_depth or not game.end():
             return self.evaluate(game), None
         return_action = None
         actions, states = game.getAllPossibleStates()
@@ -70,7 +70,7 @@ class MiniMaxAgent(Agent, ABC):
         return alpha, return_action
 
     def min(self, alpha, beta, depth, game):
-        if depth == self.maximum_depth or game.end() is not None:
+        if depth == self.maximum_depth or not game.end():
             return self.evaluate(game), None
         return_action = None
         actions, states = game.getAllPossibleStates()

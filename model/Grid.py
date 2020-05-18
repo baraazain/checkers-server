@@ -13,6 +13,8 @@ class Cell:
         self.piece.type = typ
 
     def getType(self):
+        if self.piece is None:
+            return None
         return self.piece.type
 
     def getColor(self):

@@ -1,6 +1,5 @@
-from model.Game import Action, Game
-from model.Piece import *
-from .config import MAXIMIZER
+from model.game import Action, Game
+from model.piece import *
 from collections import deque
 from copy import deepcopy
 import numpy as np
@@ -62,9 +61,9 @@ class GameState:
         self.cls = game.__class__
 
     def get_all_possible_states(self):
-        states = self.cls.build(self.white_pieces, self.black_pieces, self.turn).getAllPossibleStates()
+        actions, states = self.cls.build(self.white_pieces, self.black_pieces, self.turn).getAllPossibleStates()
         ret = [GameState(state) for state in states]
-        return ret
+        return actions, ret
     
     def get_player_turn(self):
         return self.turn

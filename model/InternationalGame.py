@@ -1,7 +1,7 @@
-from .Game import Game, Action
-from .Piece import *
-from .Grid import Cell
-from .Actors import Player
+from .game import Game, Action
+from .piece import *
+from .grid import Cell
+from .actors import Player
 from copy import deepcopy
 
 
