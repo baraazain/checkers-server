@@ -26,11 +26,7 @@ class Action:
         ret = "(" + str(self.src.r + 1) + ',' + str(self.src.c + 1) + ")"
         ret += "------->>>"
         ret += "(" + str(self.dst.r + 1) + "," + str(self.dst.c + 1) + ")"
-
-    def __eq__(self, other):
-        if isinstance(other, Action):
-            return self.src == other.src and self.dst == other.dst and self.id == other.id
-        return False
+        return ret
 
 
 class Game(ABC):

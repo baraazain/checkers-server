@@ -9,9 +9,9 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 
 def to_label(action: Action):
-    dir_r = action.dst.row - action.src.row
-    dir_c = action.dst.column - action.src.column
-    return f"{action.src.row},{action.src.column}+{dir_r},{dir_c}"
+    dir_r = action.dst.r - action.src.r
+    dir_c = action.dst.c - action.src.c
+    return f"{action.src.r},{action.src.c}+{dir_r},{dir_c}"
 
 
 def to_action(action: str):
@@ -49,6 +49,14 @@ def get_action_space(board_length, board_width):
     return all_list_action
 
 
+def evaluate(game):
+    if len(game.white_pieces) == 0:
+        return -1
+    if len(game.black_pieces) == 0:
+        return 1
+    return 0
+
+
 class GameState:
     """description of class"""
     def __init__(self, game: Game):
@@ -70,13 +78,7 @@ class GameState:
 
     def is_terminal(self):
         return self.terminal
-
-    def get_value(self):
-        if len(self.white_pieces) == 0:
-            return -1
-        if len(self.black_pieces) == 0:
-            return 1
-        return 0
+        
 
 
 class StateStack:
@@ -102,14 +104,14 @@ class StateStack:
                     column = piece.cell.c
                     color_idx = 0 if piece.color == Color.WHITE else 1
                     
-                    if piece.typ == Type.KING:
+                    if piece.type == Type.KING:
                         ret[row][column][color_idx + idx + 2] = 1
                     else:
                         ret[row][column][color_idx + idx] = 1
 
-                    if state.Turn == 1 and piece.color == Color.WHITE:
+                    if state.turn == 1 and piece.color == Color.WHITE:
                         ret[row][column][idx + 4] = 1
-                    if state.Turn == 2 and piece.color == Color.BLACK:
+                    if state.turn == 2 and piece.color == Color.BLACK:
                         ret[row][column][idx + 4] = 1
             
         return ret

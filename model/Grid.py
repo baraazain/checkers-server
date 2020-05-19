@@ -25,9 +25,6 @@ class Cell:
     def __str__(self):
         return "(" + str(self.r + 1) + "," + str(self.c + 1) + ")"
 
-#    def __eq__(self, other):
-#        return isinstance(other, Cell) and self.r == other.r and self.c == other.c and self.piece == other.piece
-
 
 class Grid:
 

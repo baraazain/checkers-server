@@ -15,6 +15,14 @@ class Player(ABC):
     @abstractmethod
     def act(self, game) -> Action:
         pass
+    
+    def __eq__(self, other):
+        if isinstance(other, Player):
+            if other is self:
+                return True
+            if self.id == other.id:
+                return True
+        return False
 
 
 class Human(Player, ABC):

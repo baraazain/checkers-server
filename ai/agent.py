@@ -83,3 +83,6 @@ class AlphaZero(Agent):
             self.mcts.expand_and_evaluate(self.mcts.root, self)
             self.mcts.root = self.mcts.root.edges[action_id].get_child()
             self.mcts.root.p = None
+            
+    def act(self, game):
+        pass

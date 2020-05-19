@@ -1,5 +1,5 @@
 from .config import EPSILON, ALPHA, MAXIMIZER
-from .utils import StateStack
+from .utils import StateStack, evaluate
 from model.game import Action
 from copy import deepcopy
 import numpy as np
@@ -94,7 +94,7 @@ class MCTree:
    
     def expand_and_evaluate(self, leaf: Node, player):
         if leaf.state_stack.head.is_terminal():
-            value = leaf.state_stack.head.get_value()
+            value = evaluate(leaf.state_stack.head)
             return value if player.pov == MAXIMIZER else -value
         else:
             value, probs, actions_cats, possible_actions, possible_states = player.get_preds(leaf.state_stack)

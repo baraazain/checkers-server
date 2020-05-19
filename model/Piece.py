@@ -17,9 +17,6 @@ class Piece(json.JSONEncoder):
         self.type = typ
         self.cell = cell
 
-#    def __eq__(self, o):
-#        return isinstance(o, Piece) and self.cell == o.cell and self.color == o.color and self.type == o.type
-
     def __str__(self):
         return "(" + self.cell.r + "," + self.cell.c + "," + self.color + ")"
 

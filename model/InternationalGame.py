@@ -1,6 +1,6 @@
 from .game import Game, Action
 from .piece import *
-from .grid import Cell
+from .grid import Cell, Grid
 from .actors import Player
 from copy import deepcopy
 
@@ -42,7 +42,7 @@ class InternationalGame(Game):
         @param move the move to check.
         @return true if correct king walk and false otherwise.
     """
-
+    # similar Bug at line 540, what if action src cell is different from my grid cell then the code at lines 53-58 breaks
     def correctKingWalk(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
@@ -499,8 +499,7 @@ class InternationalGame(Game):
             return False
         if self.currentTurn == 2 and self.grid[r][c].getColor() != Color.BLACK:
             return False
-        actions = self.getAllPossibleActions()
-        # if the move exists in allPossibleMoves, then it can be implemented
+        
         return action in actions
 
     """    
@@ -511,8 +510,11 @@ class InternationalGame(Game):
     def getMaximumEat(self):
         pass
 
+    # BUG!! When we copy Game then apply the action given from the orginal 
+    # the code at line 542 breaks as middle is no longer equals to src
+    
     def applyAction(self, action: Action):
-        # we store the copy move in the moves list not the given move
+        # we store the copy move in the moves list not the given move(Why?!)
         copyAction = deepcopy(action)
         self.actions.append(copyAction)
         src: Cell = action.src
@@ -541,6 +543,7 @@ class InternationalGame(Game):
             action.eat = deepcopy(middle.piece)
             self.removePiece(middle.piece)
             middle.piece = None
+            
         # removePiece(src)
         self.grid[srcR][srcC].piece.cell = dst
         self.grid[dstR][dstC].piece = self.grid[srcR][srcC].piece
