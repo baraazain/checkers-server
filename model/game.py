@@ -27,6 +27,13 @@ class Action:
         ret += "------->>>"
         ret += "(" + str(self.dst.r + 1) + "," + str(self.dst.c + 1) + ")"
         return ret
+    
+    def __eq__(self, other):
+        if isinstance(other, Action):
+            if self.src == other.src and self.dst == other.dst:
+                if self.player == other.player and self.eat == other.eat:
+                    return True
+        return False;
 
 
 class Game(ABC):
@@ -195,11 +202,13 @@ class Game(ABC):
         return len(self.getAllPossibleActions()) == 0
 
     def printTheWinner(self):
-        if self.currentTurn == 1:
+        winner = self.getWinner()
+        if winner == 1:
             print("player #1 the winner")
-
-        if self.currentTurn == 2:
+        elif winner == 2:
             print("player #2 the winner")
+        else:
+            print("Draw -_-")
 
     def winnerRate(self, winner):
         if winner == 1:

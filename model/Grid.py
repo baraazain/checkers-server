@@ -24,6 +24,19 @@ class Cell:
 
     def __str__(self):
         return "(" + str(self.r + 1) + "," + str(self.c + 1) + ")"
+    
+    def __eq__(self, other):
+        if isinstance(other, Cell):
+            if other is self:
+                return True
+            if self.r == other.r and self.c == other.c:
+                if self.piece is not None and other.piece is not None:
+                    if self.piece.color == other.piece.color and self.piece.type == other.piece.type:
+                        return True
+                else:
+                    return True
+                return True
+        return False
 
 
 class Grid:

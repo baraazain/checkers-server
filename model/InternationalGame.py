@@ -217,8 +217,8 @@ class InternationalGame(Game):
         curR = src.getR()
         curC = src.getC()
         while curR > 0 and curC < 9:
-            curR += 1
-            curC -= 1
+            curR -= 1
+            curC += 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
             if self.correctWalk(action):
@@ -273,8 +273,8 @@ class InternationalGame(Game):
         curR = src.r
         curC = src.c
         while curR > 0 and curC < 9:
-            curR += 1
-            curC -= 1
+            curR -= 1
+            curC += 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
             if self.correctEat(action):
@@ -499,8 +499,10 @@ class InternationalGame(Game):
             return False
         if self.currentTurn == 2 and self.grid[r][c].getColor() != Color.BLACK:
             return False
-        
-        return action in actions
+        action = self.__validateAction(action)
+        if self.correctEat(action) or self.correctWalk(action):
+            return True
+        return False
 
     """    
         apply the given move
@@ -510,22 +512,26 @@ class InternationalGame(Game):
     def getMaximumEat(self):
         pass
 
-    # BUG!! When we copy Game then apply the action given from the orginal 
-    # the code at line 542 breaks as middle is no longer equals to src
-    
+    def __validateAction(self, action):
+        src: Cell = action.src
+        dst: Cell = action.dst
+        src: Cell = self.grid[src.r][src.c]
+        dst: Cell = self.grid[dst.r][dst.c]
+        copyAction = Action(src, dst, action.player)
+        return copyAction
+
     def applyAction(self, action: Action):
-        # we store the copy move in the moves list not the given move(Why?!)
-        copyAction = deepcopy(action)
-        self.actions.append(copyAction)
+        # we store the copy move in the moves list not the given move
+        action = self.__validateAction(action)
+        self.actions.append(action)
         src: Cell = action.src
         dst: Cell = action.dst
         srcR = src.r
         srcC = src.c
         dstR = dst.r
         dstC = dst.c
-        typ = src.getType()
         # if the move is king move
-        if typ == Type.KING:
+        if src.getType() == Type.KING:
             self.moveLikeKing(action)
             return
         # this move isn't king move, so it's soldier move
@@ -539,7 +545,7 @@ class InternationalGame(Game):
         middle: Cell = self.grid[middleR][middleC]
         # in case of EAT
         if middle != dst and middle != src and middle.piece is not None:
-            copyAction.eat = deepcopy(middle.piece)
+#            copyAction.eat = deepcopy(middle.piece)
             action.eat = deepcopy(middle.piece)
             self.removePiece(middle.piece)
             middle.piece = None
@@ -554,8 +560,9 @@ class InternationalGame(Game):
             dst.setType(Type.KING)
         if dst.getColor() == Color.BLACK and dst.r == 9:
             dst.setType(Type.KING)
-        if action.eat is None:
-            self.currentTurn = 3 - self.currentTurn
+        if action.eat is not None and self.canEat(self.grid[dstR][dstC].piece):
+            return
+        self.currentTurn = 3 - self.currentTurn
 
     # undo the last move
     def undo(self):  # need debug what if eat is None?!
