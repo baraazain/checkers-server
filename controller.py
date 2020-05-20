@@ -1,7 +1,8 @@
-from model.internationalGame import InternationalGame
-from model.actors import RandomAgent, ConsolePlayer
 import datetime as dt
 import random
+
+from model.actors import RandomAgent
+from model.international_game import InternationalGame
 
 
 def main():
@@ -10,13 +11,14 @@ def main():
     game.init()
     print(game.grid)
     while not game.end():
-        action = game.getCurrentPlayer().act(game)
-        while not game.isLegalAction(action):
-            action = game.getCurrentPlayer().act(game)
-        game.applyAction(action)
+        action = game.get_current_player().act(game)
+        while not game.is_legal_action(action):
+            action = game.get_current_player().act(game)
+        game.apply_action(action)
         print(game.grid)
-    game.printTheWinner()
+    game.print_the_winner()
 
 
 if __name__ == '__main__':
     main()
+

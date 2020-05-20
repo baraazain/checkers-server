@@ -1,11 +1,12 @@
+import datetime
+
 from .actors import Player
 from .game import Mode
-from .internationalGame import InternationalGame
-import datetime
+from .international_game import InternationalGame
 
 
 class Constraint:
-    "An abstract interface"
+    """An abstract interface"""
 
     def is_valid(self, player: Player) -> bool:
         pass
@@ -49,8 +50,8 @@ class DateConstraint(Constraint):
 
 
 class Contest:
-    def __init__(self, id, name, date: datetime.date, mode: Mode):
-        self.id = id
+    def __init__(self, _id, name, date: datetime.date, mode: Mode):
+        self.id = _id
         self.name = name
         self.date = date
         self.mode = mode

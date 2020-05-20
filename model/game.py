@@ -1,8 +1,7 @@
+from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from .grid import Grid
 from .piece import *
-from abc import ABC, abstractmethod
 
 
 class Mode:
@@ -12,15 +11,15 @@ class Mode:
 
 class Action:
 
-    def __init__(self, source, destination, player):
+    def __init__(self, src, dst, player):
         self.id = -1
-        self.src = source
-        self.dst = destination
+        self.src = src
+        self.dst = dst
         self.player = player
-        self.eat = None
+        self.capture = None
 
-    def isEat(self):
-        return self.eat is not None
+    def is_capture(self):
+        return self.capture is not None
 
     def __str__(self):
         ret = "(" + str(self.src.r + 1) + ',' + str(self.src.c + 1) + ")"
@@ -31,7 +30,7 @@ class Action:
     def __eq__(self, other):
         if isinstance(other, Action):
             if self.src == other.src and self.dst == other.dst:
-                if self.player == other.player and self.eat == other.eat:
+                if self.player == other.player and self.capture == other.capture:
                     return True
         return False
 
@@ -42,95 +41,89 @@ class Game(ABC):
     def build(cls, whitePieces, blackPieces, turn):
         return None
 
-    def __init__(self, id_key, player1, player2, date):
-        self.id = id_key
+    def __init__(self, _id, player1, player2, date):
+        self.id = _id
         self.player1 = player1
         self.player2 = player2
         self.date = date
 
         self.grid = None
         self.actions = []
-        self.blackPieces = []
-        self.whitePieces = []
-        self.currentTurn = 1
-
-    def get_white_pieces(self):
-        return self.whitePieces
-
-    def get_black_pieces(self):
-        return self.blackPieces
+        self.black_pieces = []
+        self.white_pieces = []
+        self.current_turn = 1
 
     @abstractmethod
     def init(self):
         pass
 
     @abstractmethod
-    def canWalk(self, piece):
+    def can_walk(self, piece):
         pass
 
     @abstractmethod
-    def canEat(self, piece):
+    def can_capture(self, piece):
         pass
 
     @abstractmethod
-    def canMove(self, piece):
+    def can_move(self, piece):
         pass
 
     @abstractmethod
-    def getMaximumEat(self, piece, player):
+    def get_maximum_captures(self, piece, player):
         pass
 
     @abstractmethod
-    def correctKingWalk(self, action):
+    def correct_king_walk(self, action):
         pass
 
     @abstractmethod
-    def getAllPossibleWalks(self):
+    def get_all_possible_walks(self):
         pass
 
     @abstractmethod
-    def getAllPossibleEats(self):
+    def get_all_possible_captures(self):
         pass
 
     @abstractmethod
-    def getAllPossibleActions(self):
+    def get_all_possible_actions(self):
         pass
 
-    def getAllPossibleStates(self):
+    def get_all_possible_states(self):
         states = []
-        actions = self.getAllPossibleActions()
+        actions = self.get_all_possible_actions()
         for action in actions:
             new_state = deepcopy(self)
-            new_state.applyAction(action)
+            new_state.apply_action(action)
             states.append(new_state)
         return actions, states
 
     @abstractmethod
-    def correctKingEat(self, action):
+    def correct_king_eat(self, action):
         pass
 
     @abstractmethod
-    def moveLikeKing(self, action):
+    def move_like_king(self, action):
         pass
 
     @abstractmethod
-    def correctWalk(self, action):
+    def correct_walk(self, action):
         pass
 
     @abstractmethod
-    def correctEat(self, action):
+    def correct_eat(self, action):
         pass
 
     @abstractmethod
-    def isLegalAction(self, action):
+    def is_legal_action(self, action):
         pass
 
     @abstractmethod
-    def applyAction(self, action):
+    def apply_action(self, action):
         pass
 
-    def getCurrentPlayer(self):
-        return self.player1 if self.currentTurn == 1 else self.player2
+    def get_current_player(self):
+        return self.player1 if self.current_turn == 1 else self.player2
 
     """
         Add piece to whitePieces array or blackPieces according to its
@@ -138,11 +131,11 @@ class Game(ABC):
         @param piece the cell which contains the piece to add.
     """
 
-    def addPiece(self, piece: Piece):
+    def add_piece(self, piece: Piece):
         if piece.color == Color.BLACK:
-            self.blackPieces.append(piece)
+            self.black_pieces.append(piece)
         if piece.color == Color.WHITE:
-            self.whitePieces.append(piece)
+            self.white_pieces.append(piece)
 
     """
         remove piece from whitePieces array or blackPieces according to its
@@ -150,32 +143,32 @@ class Game(ABC):
         @param cell the cell which contains the piece to remove.
     """
 
-    def removePiece(self, piece: Piece):
+    def remove_piece(self, piece: Piece):
         if piece.color == Color.WHITE:
-            self.whitePieces.remove(piece)
+            self.white_pieces.remove(piece)
         if piece.color == Color.BLACK:
-            self.blackPieces.remove(piece)
+            self.black_pieces.remove(piece)
 
     # Start a new game
-    def startGame(self):
+    def start_game(self):
         self.init()
         while not self.end():
-            self.playTurn()
+            self.play_turn()
         print(self.grid)
 
     # return the winner
-    def getWinner(self):
+    def get_winner(self):
         white_dead_cnt = 0
         black_dead_cnt = 0
-        for piece in self.whitePieces:
+        for piece in self.white_pieces:
             if piece.dead:
                 white_dead_cnt += 1
-        if white_dead_cnt == len(self.whitePieces):
+        if white_dead_cnt == len(self.white_pieces):
             return 2
-        for piece in self.blackPieces:
+        for piece in self.black_pieces:
             if piece.dead:
                 black_dead_cnt += 1
-        if black_dead_cnt == len(self.blackPieces):
+        if black_dead_cnt == len(self.black_pieces):
             return 1
         return 3
 
@@ -184,25 +177,25 @@ class Game(ABC):
         (depending on turn)
     """
 
-    def playTurn(self):
-        if self.currentTurn == 1:
+    def play_turn(self):
+        if self.current_turn == 1:
             # while True:
             move = self.player1.act(self)
             # if acceptMove(move):
-            self.applyAction(move)
+            self.apply_action(move)
             #    break
-            while self.actions[len(self.actions) - 1].isEat() \
-                    and self.canEat(self.actions[len(self.actions) - 1].distination):
-                self.applyAction(self.player1.act(self))
+            while self.actions[len(self.actions) - 1].is_capture() \
+                    and self.can_capture(self.actions[len(self.actions) - 1].distination):
+                self.apply_action(self.player1.act(self))
         else:
             # while True:
             move = self.player2.act(self)
             #      if acceptMove(move):
-            self.applyAction(move)
+            self.apply_action(move)
             #       break
-            while self.actions[len(self.actions) - 1].isEat() \
-                    and self.canEat(self.actions[len(self.actions) - 1].distination):
-                self.applyAction(self.player2.act(self))
+            while self.actions[len(self.actions) - 1].is_capture() \
+                    and self.can_capture(self.actions[len(self.actions) - 1].distination):
+                self.apply_action(self.player2.act(self))
         # self.currentTurn = 3 - self.currentTurn
 
     @abstractmethod
@@ -210,20 +203,20 @@ class Game(ABC):
         pass
 
     def end(self):
-        if self.currentTurn == 1:
-            for piece in self.whitePieces:
+        if self.current_turn == 1:
+            for piece in self.white_pieces:
                 if not piece.dead:
-                    if self.canMove(piece):
+                    if self.can_move(piece):
                         return False
         else:
-            for piece in self.blackPieces:
+            for piece in self.black_pieces:
                 if not piece.dead:
-                    if self.canMove(piece):
+                    if self.can_move(piece):
                         return False
         return True
 
-    def printTheWinner(self):
-        winner = self.getWinner()
+    def print_the_winner(self):
+        winner = self.get_winner()
         if winner == 1:
             print("player #1 the winner")
         elif winner == 2:
@@ -231,7 +224,7 @@ class Game(ABC):
         else:
             print("Draw -_-")
 
-    def winnerRate(self, winner):
+    def winner_rate(self, winner):
         if winner == 1:
             winnerRate = self.player1.getRate()
             opponentRate = self.player2.getRate()
@@ -245,7 +238,7 @@ class Game(ABC):
             return 1 / res
 
     @staticmethod
-    def convertRate(rate):
+    def convert_rate(rate):
         if rate < 2100:
             return 32
         if 2200 <= rate < 2400:
@@ -253,12 +246,12 @@ class Game(ABC):
         return 16
 
     def outcome(self, playerNumber):
-        if self.getWinner() == 0:
+        if self.get_winner() == 0:
             return 0.5
-        if self.getWinner() == playerNumber:
+        if self.get_winner() == playerNumber:
             return 1
         return 0
 
-    def changeRate(self):
-        self.player1.rate += Game.convertRate(self.player1.getRate()) * (self.outcome(1) - self.winnerRate(1))
-        self.player2.rate += Game.convertRate(self.player2.getRate()) * (self.outcome(2) - self.winnerRate(2))
+    def change_rate(self):
+        self.player1.rate += Game.convert_rate(self.player1.getRate()) * (self.outcome(1) - self.winner_rate(1))
+        self.player2.rate += Game.convert_rate(self.player2.getRate()) * (self.outcome(2) - self.winner_rate(2))

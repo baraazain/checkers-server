@@ -1,30 +1,29 @@
 from math import floor, log10
-import json
 
 
 class Cell:
 
-    def __init__(self, row, col, piece):
-        self.r = row
-        self.c = col
+    def __init__(self, r, c, piece):
+        self.r = r
+        self.c = c
         self.piece = piece
 
-    def setType(self, typ):
-        self.piece.type = typ
+    def set_type(self, _type):
+        self.piece.type = _type
 
-    def getType(self):
+    def get_type(self):
         if self.piece is None:
             return None
         return self.piece.type
 
-    def getColor(self):
+    def get_color(self):
         if self.piece is None:
             return None
         return self.piece.color
 
     def __str__(self):
         return "(" + str(self.r + 1) + "," + str(self.c + 1) + ")"
-    
+
     def __eq__(self, other):
         if isinstance(other, Cell):
             if other is self:
@@ -46,9 +45,6 @@ class Grid:
         self.m = m
         self.grid = [[Cell(i, j, None) for j in range(self.m)] for i in range(self.n)]
 
-    def ok(self, r, c):
-        return 0 <= r < self.n and 0 <= c < self.m
-
     def __str__(self):
         cnt_row = floor(log10(self.n)) + 1
         cnt_column = floor(log10(self.m)) + 1
@@ -62,7 +58,7 @@ class Grid:
                 if self.grid[i][j].piece is None:
                     ret += str.center(".", cnt_column + 1)
                 else:
-                    color = self.grid[i][j].getColor()
+                    color = self.grid[i][j].get_color()
                     ret += str.center(color[0], cnt_column + 1)
             ret += "\n"
         return ret
@@ -72,3 +68,6 @@ class Grid:
 
     def valid(self, cell: Cell) -> bool:
         return self.ok(cell.r, cell.c)
+
+    def ok(self, r, c):
+        return 0 <= r < self.n and 0 <= c < self.m

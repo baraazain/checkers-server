@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from .game import Action
 from random import randrange
+
+from .game import Action
 
 
 class Player(ABC):
 
-    def __init__(self, id_key, name, password):
-        self.id = id_key
+    def __init__(self, _id, name, password):
+        self.id = _id
         self.name = name
         self.password = password
         self.rate = 1000
@@ -30,11 +31,11 @@ class Human(Player, ABC):
 
 
 class ConsolePlayer(Human):
-    def __init__(self, id_key, name, password):
-        super().__init__(id_key, name, password)
+    def __init__(self, _id, name, password):
+        super().__init__(_id, name, password)
 
     def act(self, game):
-        actions = game.getAllPossibleActions()
+        actions = game.get_all_possible_actions()
         size = len(actions)
         for idx, action in enumerate(actions):
             print(str(idx + 1) + "." + str(action))
@@ -54,7 +55,7 @@ class RandomAgent(Agent):
         Agent.__init__(self, None, "Random", None)
 
     def act(self, game):
-        actions = game.getAllPossibleActions()
+        actions = game.get_all_possible_actions()
         return actions[randrange(0, len(actions))]
 
 
@@ -67,7 +68,7 @@ class MiniMaxAgent(Agent, ABC):
         if depth == self.maximum_depth or not game.end():
             return self.evaluate(game), None
         return_action = None
-        actions, states = game.getAllPossibleStates()
+        actions, states = game.get_all_possible_states()
         for action, state in zip(actions, states):
             value, _ = self.min(alpha, beta, depth + 1, state)
             if alpha < value:
@@ -81,7 +82,7 @@ class MiniMaxAgent(Agent, ABC):
         if depth == self.maximum_depth or not game.end():
             return self.evaluate(game), None
         return_action = None
-        actions, states = game.getAllPossibleStates()
+        actions, states = game.get_all_possible_states()
         for action, state in zip(actions, states):
             value, _ = self.max(alpha, beta, depth + 1, state)
             if beta > value:

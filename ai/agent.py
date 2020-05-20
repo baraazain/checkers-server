@@ -1,9 +1,9 @@
+import numpy as np
+
+from model.actors import Agent
 from .treeSearch import *
 from .utils import ActionEncoder, get_action_space, StateStack, to_label
-from model.actors import Agent
-from model.game import Action
-from copy import deepcopy
-import numpy as np
+
 
 class AlphaZero(Agent):
     def __init__(self, simulation_limit, cpuct, model, pov, name="AlphaZero"):
@@ -12,9 +12,9 @@ class AlphaZero(Agent):
         self.model = model
         self.pov = pov
         self.cpuct = cpuct
-        
-        self.mcts: MCTree = None
-        
+
+        self.mcts = None
+
         self.action_encoder = ActionEncoder()
         action_space = np.array(get_action_space(10, 10))
         self.action_space_shape = action_space.shape
@@ -39,7 +39,7 @@ class AlphaZero(Agent):
         probs = np.array(tf.nn.softmax(logits))
 
         return value, probs, actions_cats, possible_actions, possible_states
-    
+
     def get_AV(self):
         edges = self.mcts.root.edges
         pi = np.zeros(self.action_space_shape)
@@ -51,7 +51,7 @@ class AlphaZero(Agent):
 
         pi = pi / self.mcts.root.stats['N']
         return pi, values
-    
+
     def choose_action(self, pi, values, tau):
         if tau == 0:
             actions = np.argwhere(pi == np.max(pi))
@@ -59,22 +59,22 @@ class AlphaZero(Agent):
         else:
             outcomes = np.random.multinomial(1, pi)
             action_idx = np.where(outcomes == 1)[0][0]
-        
+
         return action_idx, values[action_idx]
-    
+
     def train_act(self, tau):
         for _ in range(self.simulation_limit):
             self.mcts.simulate(self)
-        
-        pi ,values = self.get_AV()
-        
+
+        pi, values = self.get_AV()
+
         action_id, value = self.choose_action(pi, values, tau)
-        
+
         return self.mcts.root.edges[action_id].action, action_id, self.mcts.root.get_state(), value, pi
-        
+
     def build_mcts(self, state_stack):
-        self.mcts = MCTree(Node(state_stack,None, 1), self.cpuct)
-    
+        self.mcts = MCTree(Node(state_stack, None, 1), self.cpuct)
+
     def update_root(self, action_id):
         if not self.mcts.root.is_leaf():
             self.mcts.root = self.mcts.root.edges[action_id].get_child()
@@ -83,6 +83,6 @@ class AlphaZero(Agent):
             self.mcts.expand_and_evaluate(self.mcts.root, self)
             self.mcts.root = self.mcts.root.edges[action_id].get_child()
             self.mcts.root.p = None
-            
+
     def act(self, game):
         pass

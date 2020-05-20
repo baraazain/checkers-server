@@ -1,18 +1,19 @@
-from .game import Game, Action
-from .piece import *
-from .grid import Cell, Grid
-from .actors import Player
 from copy import deepcopy
+
+from .actors import Player
+from .game import Game, Action
+from .grid import Grid
+from .piece import *
 
 
 class InternationalGame(Game):
     @classmethod
     def build(cls, whitePieces: list, blackPieces: list, turn: int):
         game = cls(-1, None, None, None)
-        game.whitePieces = deepcopy(whitePieces)
-        game.blackPieces = deepcopy(blackPieces)
-        game.currentTurn = turn
-        pieces = game.whitePieces + game.blackPieces
+        game.white_pieces = deepcopy(whitePieces)
+        game.black_pieces = deepcopy(blackPieces)
+        game.current_turn = turn
+        pieces = game.white_pieces + game.black_pieces
         for piece in pieces:
             if not piece.dead:
                 game.grid[piece.cell.r][piece.cell.c].piece = piece
@@ -32,11 +33,11 @@ class InternationalGame(Game):
                         if c == 'B':
                             piece = Piece(game.grid[i][j], Type.PAWN, Color.BLACK)
                             game.grid[i][j].piece = piece
-                            game.blackPieces.append(piece)
+                            game.black_pieces.append(piece)
                         if c == 'W':
                             piece = Piece(game.grid[i][j], Type.PAWN, Color.WHITE)
                             game.grid[i][j].piece = piece
-                            game.whitePieces.append(piece)
+                            game.white_pieces.append(piece)
                         j += 1
         return game
 
@@ -51,13 +52,13 @@ class InternationalGame(Game):
             for j in range(x, 10, 2):
                 piece = Piece(self.grid[i][j], Type.PAWN, Color.BLACK)
                 self.grid[i][j].piece = piece
-                self.blackPieces.append(piece)
+                self.black_pieces.append(piece)
         for i in range(6, 10, 1):
             x = 1 - (i % 2)
             for j in range(x, 10, 2):
                 piece = Piece(self.grid[i][j], Type.PAWN, Color.WHITE)
                 self.grid[i][j].piece = piece
-                self.whitePieces.append(piece)
+                self.white_pieces.append(piece)
 
     """
         Check if the move is correct king walk or not.
@@ -65,14 +66,14 @@ class InternationalGame(Game):
         @return true if correct king walk and false otherwise.
     """
 
-    def correctKingWalk(self, action: Action):
+    def correct_king_walk(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
         srcR = src.r
         srcC = src.c
         dstR = dst.r
         dstC = dst.c
-        if src.getType() != Type.KING:
+        if src.get_type() != Type.KING:
             return False
         if src.piece is None:
             return False
@@ -97,7 +98,7 @@ class InternationalGame(Game):
         @return true if correct king eat and false otherwise.
     """
 
-    def correctKingEat(self, action: Action):
+    def correct_king_eat(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
         srcR = src.r
@@ -116,7 +117,7 @@ class InternationalGame(Game):
         curC = srcC + dirC
         cnt = 0
         while curR != dstR:
-            if self.grid[curR][curC].getColor() == src.getColor():
+            if self.grid[curR][curC].get_color() == src.get_color():
                 return False
             if self.grid[curR][curC].piece is not None:
                 cnt += 1
@@ -130,7 +131,7 @@ class InternationalGame(Game):
         @return true if correct pawn walk and false otherwise.
     """
 
-    def correctWalk(self, action: Action):
+    def correct_walk(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
 
@@ -143,16 +144,16 @@ class InternationalGame(Game):
         r = src.r
         c = src.c
         ac = [-1, 1]
-        if src.getType() == Type.KING:
-            return self.correctKingWalk(action)
-        elif src.getColor() == Color.WHITE:
+        if src.get_type() == Type.KING:
+            return self.correct_king_walk(action)
+        elif src.get_color() == Color.WHITE:
             ar = [-1, -1]
             for i in range(0, 2, 1):
                 nr = r + ar[i]
                 nc = c + ac[i]
                 if nr == dst.r and nc == dst.c:
                     return True
-        elif src.getColor() == Color.BLACK:
+        elif src.get_color() == Color.BLACK:
             ar = [1, 1]
             for i in range(0, 2, 1):
                 nr = r + ar[i]
@@ -167,15 +168,15 @@ class InternationalGame(Game):
         @return true if correct pawn eat and false otherwise.
     """
 
-    def correctEat(self, action: Action):
+    def correct_eat(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
         srcR = src.r
         srcC = src.c
         dstR = dst.r
         dstC = dst.c
-        if src.getType() == Type.KING:
-            return self.correctKingEat(action)
+        if src.get_type() == Type.KING:
+            return self.correct_king_eat(action)
         if src.piece is None:
             return False
         if dst.piece is not None:
@@ -187,7 +188,7 @@ class InternationalGame(Game):
         middleCell = self.grid[middleR][middleC]
         if middleCell.piece is None:
             return False
-        if middleCell.getColor() == src.getColor():
+        if middleCell.get_color() == src.get_color():
             return False
         return True
 
@@ -197,7 +198,7 @@ class InternationalGame(Game):
         @return true if can walk primary and false otherwise.
     """
 
-    def canWalkPrimary(self, piece: Piece):
+    def can_walk_primary(self, piece: Piece):
         src = piece.cell
         curR = src.r
         curC = src.c
@@ -206,7 +207,7 @@ class InternationalGame(Game):
             curC -= 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctWalk(action):
+            if self.correct_walk(action):
                 return True
         curR = src.r
         curC = src.c
@@ -215,7 +216,7 @@ class InternationalGame(Game):
             curC += 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctWalk(action):
+            if self.correct_walk(action):
                 return True
         return False
 
@@ -225,7 +226,7 @@ class InternationalGame(Game):
         @return true if can walk secondary and false otherwise.
     """
 
-    def canWalkSecondary(self, piece: Piece):
+    def can_walk_secondary(self, piece: Piece):
         src = piece.cell
         curR = src.r
         curC = src.c
@@ -234,7 +235,7 @@ class InternationalGame(Game):
             curC -= 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctWalk(action):
+            if self.correct_walk(action):
                 return True
         curR = src.r
         curC = src.c
@@ -243,7 +244,7 @@ class InternationalGame(Game):
             curC += 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctWalk(action):
+            if self.correct_walk(action):
                 return True
         return False
 
@@ -253,7 +254,7 @@ class InternationalGame(Game):
         @return true if can eat primary and false otherwise.
     """
 
-    def canEatPrimary(self, piece: Piece):
+    def can_capture_primary(self, piece: Piece):
         src = piece.cell
         curR = src.r
         curC = src.c
@@ -262,7 +263,7 @@ class InternationalGame(Game):
             curC -= 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctEat(action):
+            if self.correct_eat(action):
                 return True
         curR = src.r
         curC = src.c
@@ -271,7 +272,7 @@ class InternationalGame(Game):
             curC += 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctEat(action):
+            if self.correct_eat(action):
                 return True
         return False
 
@@ -281,7 +282,7 @@ class InternationalGame(Game):
         @return true if can eat secondary and false otherwise.
     """
 
-    def canEatSecondary(self, piece: Piece):
+    def can_capture_secondary(self, piece: Piece):
         src = piece.cell
         curR = src.r
         curC = src.c
@@ -290,7 +291,7 @@ class InternationalGame(Game):
             curC -= 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctEat(action):
+            if self.correct_eat(action):
                 return True
         curR = src.r
         curC = src.c
@@ -299,18 +300,18 @@ class InternationalGame(Game):
             curC += 1
             dst = self.grid[curR][curC]
             action = Action(src, dst, None)
-            if self.correctEat(action):
+            if self.correct_eat(action):
                 return True
         return False
 
-    def canWalk(self, piece):
-        return self.canWalkPrimary(piece) or self.canWalkSecondary(piece)
+    def can_walk(self, piece):
+        return self.can_walk_primary(piece) or self.can_walk_secondary(piece)
 
-    def canEat(self, piece):
-        return self.canEatPrimary(piece) or self.canEatSecondary(piece)
+    def can_capture(self, piece):
+        return self.can_capture_primary(piece) or self.can_capture_secondary(piece)
 
-    def canMove(self, piece):
-        return self.canWalk(piece) or self.canEat(piece)
+    def can_move(self, piece):
+        return self.can_walk(piece) or self.can_capture(piece)
 
     """
         calc all possible walks in the primary diagonal for a given
@@ -320,7 +321,7 @@ class InternationalGame(Game):
         @return List of moves
     """
 
-    def getAllPossiblePrimaryWalks(self, piece: Piece, currentPlayer: Player):
+    def get_all_possible_primary_walks(self, piece: Piece, currentPlayer: Player):
         src = piece.cell
         r = src.r
         c = src.c
@@ -332,7 +333,7 @@ class InternationalGame(Game):
         while stR < 10 and stC < 10:
             dst = self.grid[stR][stC]
             action = Action(src, dst, currentPlayer)
-            if self.correctWalk(action):
+            if self.correct_walk(action):
                 actions.append(action)
             # next cell in the primary diagonal is (i+1, j+1)
             stR += 1
@@ -347,7 +348,7 @@ class InternationalGame(Game):
         @return List of moves
     """
 
-    def getAllPossibleSecondaryWalks(self, piece: Piece, currentPlayer: Player):
+    def get_all_possible_secondary_walks(self, piece: Piece, currentPlayer: Player):
         src = piece.cell
         r = src.r
         c = src.c
@@ -359,7 +360,7 @@ class InternationalGame(Game):
         while stR < 10 and stC >= 0:
             dst = self.grid[stR][stC]
             action = Action(src, dst, currentPlayer)
-            if self.correctWalk(action):
+            if self.correct_walk(action):
                 actions.append(action)
             # next cell in the secondary diagonal is (i+1, j-1)
             stR += 1
@@ -374,7 +375,7 @@ class InternationalGame(Game):
         @return List of moves
     """
 
-    def getAllPossiblePrimaryEats(self, piece: Piece, currentPlayer: Player):
+    def get_all_possible_primary_captures(self, piece: Piece, currentPlayer: Player):
         src = piece.cell
         r = src.r
         c = src.c
@@ -385,7 +386,7 @@ class InternationalGame(Game):
         while stR < 10 and stC < 10:
             dst = self.grid[stR][stC]
             action = Action(src, dst, currentPlayer)
-            if self.correctEat(action):
+            if self.correct_eat(action):
                 actions.append(action)
             stR += 1
             stC += 1
@@ -399,7 +400,7 @@ class InternationalGame(Game):
         @return List of moves
     """
 
-    def getAllPossibleSecondaryEats(self, piece: Piece, currentPlayer: Player):
+    def get_all_possible_secondary_captures(self, piece: Piece, currentPlayer: Player):
         src = piece.cell
         r = src.r
         c = src.c
@@ -410,7 +411,7 @@ class InternationalGame(Game):
         while stR < 10 and stC >= 0:
             dst = self.grid[stR][stC]
             action = Action(src, dst, currentPlayer)
-            if self.correctEat(action):
+            if self.correct_eat(action):
                 actions.append(action)
             stR += 1
             stC -= 1
@@ -421,60 +422,61 @@ class InternationalGame(Game):
         @return all possible moves starting from given cell
     """
 
-    def getAllPossibleActions(self):
-        actions = self.getAllPossibleEats()
-        if len(actions) == 0:
-            actions = self.getAllPossibleWalks()
+    def get_all_possible_actions(self):
+        actions = self.get_all_possible_captures()
+        if not actions:
+            actions = self.get_all_possible_walks()
         return actions
 
     # @return all possible walks from the current state
-    def getAllPossibleWalks(self):
+    def get_all_possible_walks(self):
         actions = []
-        if self.currentTurn == 1:
+        if self.current_turn == 1:
             # iterate over all white pieces and get the moves from the pieces
-            for piece in self.whitePieces:
+            for piece in self.white_pieces:
                 if not piece.dead:
-                    actions.extend(self.getAllPossiblePrimaryWalks(piece, self.player1))
-                    actions.extend(self.getAllPossibleSecondaryWalks(piece, self.player1))
+                    actions.extend(self.get_all_possible_primary_walks(piece, self.player1))
+                    actions.extend(self.get_all_possible_secondary_walks(piece, self.player1))
         else:
             # iterate over all black pieces and get the moves for this pieces
-            for piece in self.blackPieces:
+            for piece in self.black_pieces:
                 if not piece.dead:
-                    actions.extend(self.getAllPossiblePrimaryWalks(piece, self.player2))
-                    actions.extend(self.getAllPossibleSecondaryWalks(piece, self.player2))
+                    actions.extend(self.get_all_possible_primary_walks(piece, self.player2))
+                    actions.extend(self.get_all_possible_secondary_walks(piece, self.player2))
         return actions
 
-    def getMaximumEat(self, piece, player):
-        if not self.canEat(piece):
-            self.currentTurn = 3 - self.currentTurn
+    def get_maximum_captures(self, piece, player):
+        if not self.can_capture(piece):
+            self.current_turn = 3 - self.current_turn
             return 0, None
-        eats = self.getAllPossiblePrimaryEats(piece, player) + self.getAllPossibleSecondaryEats(piece, player)
+        captures = self.get_all_possible_primary_captures(piece, player)
+        captures = captures + self.get_all_possible_secondary_captures(piece, player)
         mx = 0
         action = None
-        for eat in eats:
-            self.applyAction(eat)
-            value, act = self.getMaximumEat(piece, player)
+        for capture in captures:
+            self.apply_action(capture)
+            value, act = self.get_maximum_captures(piece, player)
             if mx < value + 1:
                 mx = value + 1
-                action = eat
+                action = capture
             self.undo()
         return mx, action
 
     # @return all possible eats from current states
-    def getAllPossibleEats(self):
+    def get_all_possible_captures(self):
         actions = []
-        if self.currentTurn == 1:
+        if self.current_turn == 1:
             # iterate over all white pieces and get the moves from the pieces
-            for piece in self.whitePieces:
+            for piece in self.white_pieces:
                 if not piece.dead:
-                    if self.canEat(piece):
-                        actions.append(self.getMaximumEat(piece, self.player1))
+                    if self.can_capture(piece):
+                        actions.append(self.get_maximum_captures(piece, self.player1))
         else:
             # iterate over all black pieces and get the moves from this pieces
-            for piece in self.blackPieces:
+            for piece in self.black_pieces:
                 if not piece.dead:
-                    if self.canEat(piece):
-                        actions.append(self.getMaximumEat(piece, self.player2))
+                    if self.can_capture(piece):
+                        actions.append(self.get_maximum_captures(piece, self.player2))
 
         mx = 0
         for value, action in actions:
@@ -487,7 +489,7 @@ class InternationalGame(Game):
         @param move the king's move
     """
 
-    def moveLikeKing(self, action: Action):
+    def move_like_king(self, action: Action):
         srcR = action.src.r
         srcC = action.src.c
         dstR = action.dst.r
@@ -523,16 +525,16 @@ class InternationalGame(Game):
                 the board (eat case)
             """
             if cur.piece is not None:
-                action.eat = cur.piece
+                action.capture = cur.piece
                 cur.piece.dead = True
                 # self.removePiece(cur.piece)
                 cur.piece = None
                 break
             curR += dirR
             curC += dirC
-        if action.eat is not None and self.canEat(self.grid[dst.r][dst.c].piece):
+        if action.capture is not None and self.can_capture(self.grid[dst.r][dst.c].piece):
             return
-        self.currentTurn = 3 - self.currentTurn
+        self.current_turn = 3 - self.current_turn
         # self.actions.append(action)
 
     """     
@@ -540,20 +542,20 @@ class InternationalGame(Game):
         @return if the given move can be implemented or not
     """
 
-    def isLegalAction(self, action: Action):
+    def is_legal_action(self, action: Action):
         r = action.src.r
         c = action.src.c
         # Wrong turn
-        if self.currentTurn == 1 and self.grid[r][c].getColor() != Color.WHITE:
+        if self.current_turn == 1 and self.grid[r][c].get_color() != Color.WHITE:
             return False
-        if self.currentTurn == 2 and self.grid[r][c].getColor() != Color.BLACK:
+        if self.current_turn == 2 and self.grid[r][c].get_color() != Color.BLACK:
             return False
-        action = self.__validateAction(action)
-        if self.correctEat(action) or self.correctWalk(action):
+        action = self._validateAction(action)
+        if self.correct_eat(action) or self.correct_walk(action):
             return True
         return False
 
-    def __validateAction(self, action):
+    def _validateAction(self, action):
         src: Cell = action.src
         dst: Cell = action.dst
         src: Cell = self.grid[src.r][src.c]
@@ -566,9 +568,9 @@ class InternationalGame(Game):
         @param move the move to apply
     """
 
-    def applyAction(self, action: Action):
+    def apply_action(self, action: Action):
         # we store the copy move in the moves list not the given move
-        action = self.__validateAction(action)
+        action = self._validateAction(action)
         self.actions.append(action)
         src: Cell = action.src
         dst: Cell = action.dst
@@ -577,8 +579,8 @@ class InternationalGame(Game):
         dstR = dst.r
         dstC = dst.c
         # if the move is king move
-        if src.getType() == Type.KING:
-            self.moveLikeKing(action)
+        if src.get_type() == Type.KING:
+            self.move_like_king(action)
             return
         # this move isn't king move, so it's soldier move
         """
@@ -592,7 +594,7 @@ class InternationalGame(Game):
         # in case of EAT
         if middle != dst and middle != src and middle.piece is not None:
             #            copyAction.eat = deepcopy(middle.piece)
-            action.eat = middle.piece
+            action.capture = middle.piece
             middle.piece.dead = True
             # self.removePiece(middle.piece)
             middle.piece = None
@@ -603,20 +605,20 @@ class InternationalGame(Game):
         self.grid[srcR][srcC].piece = None
         # addPiece(dst.getPiece())
         # if a pawn reaches the end, it'll promoted to king
-        if dst.getColor() == Color.WHITE and dst.r == 0:
-            dst.setType(Type.KING)
-        if dst.getColor() == Color.BLACK and dst.r == 9:
-            dst.setType(Type.KING)
-        if action.eat is not None and self.canEat(self.grid[dstR][dstC].piece):
+        if dst.get_color() == Color.WHITE and dst.r == 0:
+            dst.set_type(Type.KING)
+        if dst.get_color() == Color.BLACK and dst.r == 9:
+            dst.set_type(Type.KING)
+        if action.capture is not None and self.can_capture(self.grid[dstR][dstC].piece):
             return
-        self.currentTurn = 3 - self.currentTurn
+        self.current_turn = 3 - self.current_turn
 
     # undo the last move
     def undo(self):
         action: Action = self.actions.pop()
         src = action.src
         dst = action.dst
-        piece = action.eat
+        piece = action.capture
         if piece is not None:
             piece.cell.piece = piece
             piece.dead = False

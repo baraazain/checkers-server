@@ -1,5 +1,4 @@
 from .grid import Cell
-import json
 
 
 class Color:
@@ -13,9 +12,9 @@ class Type:
 
 
 class Piece:
-    def __init__(self, cell: Cell, typ, color):
+    def __init__(self, cell: Cell, _type, color):
         self.color = color
-        self.type = typ
+        self.type = _type
         self.cell = cell
         self.dead = False
 

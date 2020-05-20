@@ -1,8 +1,9 @@
-from tensorflow.keras.models import Sequential, load_model, Model
-from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, BatchNormalization, Activation, LeakyReLU, add
-from tensorflow.keras.optimizers import SGD, Adam
-from tensorflow.keras import regularizers
 import tensorflow as tf
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, BatchNormalization, LeakyReLU, add
+from tensorflow.keras.models import load_model, Model
+from tensorflow.keras.optimizers import Adam
+
 run_folder = 'run/'
 run_archive_folder = './run_archive/'
 
@@ -27,7 +28,7 @@ def softmax_cross_entropy_with_logits(y_true, y_pred):
     return loss
 
 
-class NeuralNetwork():
+class NeuralNetwork:
     def __init__(self, reg_const, learning_rate, input_dim, output_dim, hidden_layers):
         self.reg_const = reg_const
         self.learning_rate = learning_rate
