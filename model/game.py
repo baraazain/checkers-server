@@ -210,7 +210,17 @@ class Game(ABC):
         pass
 
     def end(self):
-        return len(self.getAllPossibleActions()) == 0
+        if self.currentTurn == 1:
+            for piece in self.whitePieces:
+                if not piece.dead:
+                    if self.canMove(piece):
+                        return False
+        else:
+            for piece in self.blackPieces:
+                if not piece.dead:
+                    if self.canMove(piece):
+                        return False
+        return True
 
     def printTheWinner(self):
         winner = self.getWinner()

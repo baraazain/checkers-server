@@ -1,5 +1,5 @@
 from model.internationalGame import InternationalGame
-from model.actors import RandomAgent
+from model.actors import RandomAgent, ConsolePlayer
 import datetime as dt
 import random
 

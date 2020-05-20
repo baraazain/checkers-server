@@ -14,8 +14,30 @@ class InternationalGame(Game):
         game.currentTurn = turn
         pieces = game.whitePieces + game.blackPieces
         for piece in pieces:
-            game.grid[piece.cell.r][piece.cell.c].piece = piece
-            piece.cell = game.grid[piece.cell.r][piece.cell.c]
+            if not piece.dead:
+                game.grid[piece.cell.r][piece.cell.c].piece = piece
+                piece.cell = game.grid[piece.cell.r][piece.cell.c]
+        return game
+
+    # for testing purposes
+    @classmethod
+    def read(cls):
+        game = cls(-1, None, None, None)
+        with open('input.txt') as f:
+            for i in range(10):
+                line = f.readline()
+                j = 0
+                for c in line:
+                    if c != ' ':
+                        if c == 'B':
+                            piece = Piece(game.grid[i][j], Type.PAWN, Color.BLACK)
+                            game.grid[i][j].piece = piece
+                            game.blackPieces.append(piece)
+                        if c == 'W':
+                            piece = Piece(game.grid[i][j], Type.PAWN, Color.WHITE)
+                            game.grid[i][j].piece = piece
+                            game.whitePieces.append(piece)
+                        j += 1
         return game
 
     def __init__(self, *args, **kwargs):
@@ -43,7 +65,6 @@ class InternationalGame(Game):
         @return true if correct king walk and false otherwise.
     """
 
-    # similar Bug at line 540, what if action src cell is different from my grid cell then the code at lines 53-58 breaks
     def correctKingWalk(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
@@ -215,8 +236,8 @@ class InternationalGame(Game):
             action = Action(src, dst, None)
             if self.correctWalk(action):
                 return True
-        curR = src.getR()
-        curC = src.getC()
+        curR = src.r
+        curC = src.c
         while curR > 0 and curC < 9:
             curR -= 1
             curC += 1
