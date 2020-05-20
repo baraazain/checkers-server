@@ -6,27 +6,10 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 
-
-
 def to_label(action: Action):
     dir_r = action.dst.r - action.src.r
     dir_c = action.dst.c - action.src.c
     return f"{action.src.r},{action.src.c}+{dir_r},{dir_c}"
-
-
-def to_action(action: str):
-    pos_str, dir_str = action.split("+")
-    src_x , src_y = pos_str.split(",")
-    src_x = int(src_x)
-    src_y = int(src_y)
-
-    dir_x, dir_y = dir_str.split(",")
-    dir_x = int(dir_x)
-    dir_y = int(dir_y)
-
-    dst_x = src_x + dir_x
-    dst_y = src_y + dir_y
-    return Position(src_x, src_y),Position(dst_x, dst_y)
 
 
 def valid(x, y, n, m):
@@ -50,11 +33,12 @@ def get_action_space(board_length, board_width):
 
 
 def evaluate(game):
-    if len(game.white_pieces) == 0:
+    if len(game.get_white_pieces()) == 0:
         return -1
-    if len(game.black_pieces) == 0:
+    if len(game.get_black_pieces()) == 0:
         return 1
     return 0
+
 
 
 class GameState:
@@ -79,7 +63,11 @@ class GameState:
     def is_terminal(self):
         return self.terminal
         
-
+    def get_white_pieces(self):
+        return self.white_pieces
+    
+    def get_black_pieces(self):
+        return self.black_pieces
 
 class StateStack:
     def __init__(self,inital_state: GameState):

@@ -27,17 +27,17 @@ class Action:
         ret += "------->>>"
         ret += "(" + str(self.dst.r + 1) + "," + str(self.dst.c + 1) + ")"
         return ret
-    
+
     def __eq__(self, other):
         if isinstance(other, Action):
             if self.src == other.src and self.dst == other.dst:
                 if self.player == other.player and self.eat == other.eat:
                     return True
-        return False;
+        return False
 
 
 class Game(ABC):
-    
+
     @classmethod
     def build(cls, whitePieces, blackPieces, turn):
         return None
@@ -53,6 +53,12 @@ class Game(ABC):
         self.blackPieces = []
         self.whitePieces = []
         self.currentTurn = 1
+
+    def get_white_pieces(self):
+        return self.whitePieces
+
+    def get_black_pieces(self):
+        return self.blackPieces
 
     @abstractmethod
     def init(self):
@@ -71,7 +77,7 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def getMaximumEat(self):
+    def getMaximumEat(self, piece, player):
         pass
 
     @abstractmethod
@@ -159,12 +165,19 @@ class Game(ABC):
 
     # return the winner
     def getWinner(self):
-        winner = 3
-        if len(self.whitePieces) != 0:
-            winner -= 2
-        if len(self.blackPieces) != 0:
-            winner -= 1
-        return winner
+        white_dead_cnt = 0
+        black_dead_cnt = 0
+        for piece in self.whitePieces:
+            if piece.dead:
+                white_dead_cnt += 1
+        if white_dead_cnt == len(self.whitePieces):
+            return 2
+        for piece in self.blackPieces:
+            if piece.dead:
+                black_dead_cnt += 1
+        if black_dead_cnt == len(self.blackPieces):
+            return 1
+        return 3
 
     """
         organize the turns, get the move from the white or black player
@@ -190,15 +203,13 @@ class Game(ABC):
             while self.actions[len(self.actions) - 1].isEat() \
                     and self.canEat(self.actions[len(self.actions) - 1].distination):
                 self.applyAction(self.player2.act(self))
-        #self.currentTurn = 3 - self.currentTurn
+        # self.currentTurn = 3 - self.currentTurn
 
     @abstractmethod
     def undo(self):
         pass
 
     def end(self):
-        if len(self.blackPieces) == 0 or len(self.whitePieces) == 0:
-            return True
         return len(self.getAllPossibleActions()) == 0
 
     def printTheWinner(self):

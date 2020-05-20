@@ -7,7 +7,7 @@ from copy import deepcopy
 
 class InternationalGame(Game):
     @classmethod
-    def build(cls, whitePieces: list, blackPieces:list, turn: int):
+    def build(cls, whitePieces: list, blackPieces: list, turn: int):
         game = cls(-1, None, None, None)
         game.whitePieces = deepcopy(whitePieces)
         game.blackPieces = deepcopy(blackPieces)
@@ -42,6 +42,7 @@ class InternationalGame(Game):
         @param move the move to check.
         @return true if correct king walk and false otherwise.
     """
+
     # similar Bug at line 540, what if action src cell is different from my grid cell then the code at lines 53-58 breaks
     def correctKingWalk(self, action: Action):
         src: Cell = action.src
@@ -411,14 +412,32 @@ class InternationalGame(Game):
         if self.currentTurn == 1:
             # iterate over all white pieces and get the moves from the pieces
             for piece in self.whitePieces:
-                actions.extend(self.getAllPossiblePrimaryWalks(piece, self.player1))
-                actions.extend(self.getAllPossibleSecondaryWalks(piece, self.player1))
+                if not piece.dead:
+                    actions.extend(self.getAllPossiblePrimaryWalks(piece, self.player1))
+                    actions.extend(self.getAllPossibleSecondaryWalks(piece, self.player1))
         else:
             # iterate over all black pieces and get the moves for this pieces
-            for piece in reversed(self.blackPieces):
-                actions.extend(self.getAllPossiblePrimaryWalks(piece, self.player2))
-                actions.extend(self.getAllPossibleSecondaryWalks(piece, self.player2))
+            for piece in self.blackPieces:
+                if not piece.dead:
+                    actions.extend(self.getAllPossiblePrimaryWalks(piece, self.player2))
+                    actions.extend(self.getAllPossibleSecondaryWalks(piece, self.player2))
         return actions
+
+    def getMaximumEat(self, piece, player):
+        if not self.canEat(piece):
+            self.currentTurn = 3 - self.currentTurn
+            return 0, None
+        eats = self.getAllPossiblePrimaryEats(piece, player) + self.getAllPossibleSecondaryEats(piece, player)
+        mx = 0
+        action = None
+        for eat in eats:
+            self.applyAction(eat)
+            value, act = self.getMaximumEat(piece, player)
+            if mx < value + 1:
+                mx = value + 1
+                action = eat
+            self.undo()
+        return mx, action
 
     # @return all possible eats from current states
     def getAllPossibleEats(self):
@@ -426,14 +445,21 @@ class InternationalGame(Game):
         if self.currentTurn == 1:
             # iterate over all white pieces and get the moves from the pieces
             for piece in self.whitePieces:
-                actions.extend(self.getAllPossiblePrimaryEats(piece, self.player1))
-                actions.extend(self.getAllPossibleSecondaryEats(piece, self.player1))
+                if not piece.dead:
+                    if self.canEat(piece):
+                        actions.append(self.getMaximumEat(piece, self.player1))
         else:
             # iterate over all black pieces and get the moves from this pieces
             for piece in self.blackPieces:
-                actions.extend(self.getAllPossiblePrimaryEats(piece, self.player2))
-                actions.extend(self.getAllPossibleSecondaryEats(piece, self.player2))
-        return actions
+                if not piece.dead:
+                    if self.canEat(piece):
+                        actions.append(self.getMaximumEat(piece, self.player2))
+
+        mx = 0
+        for value, action in actions:
+            mx = max(mx, value)
+
+        return [action for value, action in actions if value == mx]
 
     """      
         implements king's move
@@ -476,15 +502,17 @@ class InternationalGame(Game):
                 the board (eat case)
             """
             if cur.piece is not None:
-                action.eat = deepcopy(cur.piece)
-                self.removePiece(cur.piece)
+                action.eat = cur.piece
+                cur.piece.dead = True
+                # self.removePiece(cur.piece)
                 cur.piece = None
                 break
             curR += dirR
             curC += dirC
-        if action.eat is None:
-            self.currentTurn = 3 - self.currentTurn
-        self.actions.append(action)
+        if action.eat is not None and self.canEat(self.grid[dst.r][dst.c].piece):
+            return
+        self.currentTurn = 3 - self.currentTurn
+        # self.actions.append(action)
 
     """     
         @param move the move needs to implement
@@ -504,14 +532,6 @@ class InternationalGame(Game):
             return True
         return False
 
-    """    
-        apply the given move
-        @param move the move to apply
-    """
-
-    def getMaximumEat(self):
-        pass
-
     def __validateAction(self, action):
         src: Cell = action.src
         dst: Cell = action.dst
@@ -519,6 +539,11 @@ class InternationalGame(Game):
         dst: Cell = self.grid[dst.r][dst.c]
         copyAction = Action(src, dst, action.player)
         return copyAction
+
+    """    
+        apply the given move
+        @param move the move to apply
+    """
 
     def applyAction(self, action: Action):
         # we store the copy move in the moves list not the given move
@@ -545,11 +570,12 @@ class InternationalGame(Game):
         middle: Cell = self.grid[middleR][middleC]
         # in case of EAT
         if middle != dst and middle != src and middle.piece is not None:
-#            copyAction.eat = deepcopy(middle.piece)
-            action.eat = deepcopy(middle.piece)
-            self.removePiece(middle.piece)
+            #            copyAction.eat = deepcopy(middle.piece)
+            action.eat = middle.piece
+            middle.piece.dead = True
+            # self.removePiece(middle.piece)
             middle.piece = None
-            
+
         # removePiece(src)
         self.grid[srcR][srcC].piece.cell = dst
         self.grid[dstR][dstC].piece = self.grid[srcR][srcC].piece
@@ -565,14 +591,14 @@ class InternationalGame(Game):
         self.currentTurn = 3 - self.currentTurn
 
     # undo the last move
-    def undo(self):  # need debug what if eat is None?!
-        """action: Action = self.actions.get(len(self.actions) - 1)
-        src = action.source
-        dst = action.destination
-        piece = action.getEat()
-        piece.getCell().setPiece(piece)
-        src.setPiece(dst.getPiece())
-        dst.setPiece(Piece(dst, Type.PAWN, Color.EMPTY))
-        src.getPiece().setCell(src)
-        """
-        pass
+    def undo(self):
+        action: Action = self.actions.pop()
+        src = action.src
+        dst = action.dst
+        piece = action.eat
+        if piece is not None:
+            piece.cell.piece = piece
+            piece.dead = False
+        src.piece = dst.piece
+        dst.piece = None
+        src.piece.cell = src

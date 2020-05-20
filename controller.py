@@ -1,9 +1,11 @@
 from model.internationalGame import InternationalGame
 from model.actors import RandomAgent
 import datetime as dt
+import random
 
 
 def main():
+    random.seed(101)
     game = InternationalGame(1, RandomAgent(), RandomAgent(), dt.datetime.now())
     game.init()
     print(game.grid)
