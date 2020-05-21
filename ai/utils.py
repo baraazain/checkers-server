@@ -17,7 +17,7 @@ def valid(x, y, n, m):
     return 0 <= x < n and 0 <= y < m
 
 
-def get_action_space(board_length, board_width):
+def get_action_space(board_length=10, board_width=10):
     all_list_action = []
 
     for i in range(board_length):
@@ -110,10 +110,11 @@ class StateStack:
         return self.dq.__repr__()
 
 
-class ActionEncoder():
+class ActionEncoder:
     def __init__(self):
         self.label_encoder = LabelEncoder()
         self.one_hot_encoder = OneHotEncoder(sparse=False)
+        self.space_shape = 0
 
     def fit(self, action_space_list):
         self.space_shape = len(action_space_list)
@@ -122,7 +123,7 @@ class ActionEncoder():
         self.one_hot_encoder.fit(action_space_list)
 
     def one_hot_transform(self, data):
-        data = self.lable_transform(data)
+        data = self.label_transform(data)
         data = data.reshape(len(data), 1)
         data = self.one_hot_encoder.transform(data)
         return data
