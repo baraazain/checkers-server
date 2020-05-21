@@ -32,14 +32,23 @@ def get_action_space(board_length=10, board_width=10):
                         all_list_action.append(action)
     return all_list_action
 
-# BUG fix dead pieces
-
 
 def evaluate(game):
-    if len(game.white_pieces) == 0:
+    cnt = 0
+    for piece in game.white_pieces:
+        if piece.dead:
+            cnt += 1
+    if len(game.white_pieces) == cnt:
         return -1
-    if len(game.black_pieces) == 0:
+
+    cnt = 0
+    for piece in game.black_pieces:
+        if piece.dead:
+            cnt += 1
+    
+    if len(game.black_pieces) == cnt:
         return 1
+
     return 0
 
 
