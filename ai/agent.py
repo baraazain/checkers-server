@@ -13,8 +13,7 @@ class AlphaZero(Agent):
         self.mcts = None
 
         self.action_encoder = ActionEncoder()
-        action_space = np.array(get_action_space())
-        self.action_encoder.fit(action_space)
+        self.action_encoder.fit(get_action_space())
 
     @staticmethod
     def choose_action(pi, values, tau):
@@ -45,15 +44,10 @@ class AlphaZero(Agent):
 
     def build_mcts(self, state_stack: StateStack, cpuct: float, model: NeuralNetwork):
         self.mcts = MCTree(Node(state_stack, None, 1), cpuct, model, self.action_encoder)
-
-    def update_root(self, action_id):
-        if not self.mcts.root.is_leaf():
-            self.mcts.root = self.mcts.root.edges[action_id].child_node
-            self.mcts.root.parent_node = None
-        else:
-            self.mcts.expand_and_evaluate(self.mcts.root, self)
-            self.mcts.root = self.mcts.root.edges[action_id].child_node
-            self.mcts.root.parent_node = None
-
+    
+    def on_update(self, action):
+        action_id = self.action_encoder.transform([action])
+        self.mcts.update_root(action_id)
+    
     def act(self, game):
         pass

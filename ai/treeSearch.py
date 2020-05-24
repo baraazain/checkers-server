@@ -94,7 +94,7 @@ class MCTree:
         possible_actions, possible_states = state_stack.head.get_all_possible_states()
 
         actions_labels = np.array(list(map(to_label, possible_actions)))
-        actions_cats = self.action_encoder.label_transform(actions_labels)
+        actions_cats = self.action_encoder.transform(actions_labels)
 
         mask = np.ones_like(logits, dtype=bool)
         mask[actions_cats] = False
@@ -132,3 +132,12 @@ class MCTree:
 
         pi = pi / self.root.stats['N']
         return pi, values
+    
+    def update_root(self, action_id):
+        if not self.root.is_leaf():
+            self.root = self.root.edges[action_id].child_node
+            self.root.parent_node = None
+        else:
+            self.expand_and_evaluate(self.root)
+            self.root = self.root.edges[action_id].child_node
+            self.root.parent_node = None

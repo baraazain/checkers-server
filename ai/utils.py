@@ -1,10 +1,10 @@
 from collections import deque
 
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 
 from model.game import Action, Game
-from model.piece import *
+from model.piece import Color, Type
 
 
 def to_label(action: Action):
@@ -88,7 +88,7 @@ class StateStack:
         return self.head.board_length, self.head.board_width, self.max_features * self.max_len
 
     def get_deep_representation_stack(self):
-        ret = np.zeros((self.head.board_length, self.head.board_width, self.max_features * self.max_len))
+        ret = np.zeros(self.get_input_shape())
         for idx, state in enumerate(reversed(self.dq)):
 
             pieces = state.white_pieces + state.black_pieces
@@ -111,7 +111,7 @@ class StateStack:
 
         return ret
 
-    def push(self, state):
+    def push(self, state: GameState):
         self.dq.append(state)
         self.head = state
 
@@ -119,43 +119,14 @@ class StateStack:
         return self.dq.__repr__()
 
 
-class ActionEncoder:
+class ActionEncoder(LabelEncoder):
     def __init__(self):
-        self.label_encoder = LabelEncoder()
-        self.one_hot_encoder = OneHotEncoder(sparse=False)
+        super().__init__()
         self.space_shape = 0
 
     def fit(self, action_space_list):
         self.space_shape = len(action_space_list)
-        action_space_list = self.label_encoder.fit_transform(action_space_list)
-        action_space_list = action_space_list.reshape(self.space_shape, 1)
-        self.one_hot_encoder.fit(action_space_list)
-
-    def one_hot_transform(self, data):
-        data = self.label_transform(data)
-        data = data.reshape(len(data), 1)
-        data = self.one_hot_encoder.transform(data)
-        return data
-
-    def one_hot_inverse_transform(self, data):
-        data = self.one_hot_encoder.inverse_transform(data)
-        data = self.label_encoder.inverse_transform(data.ravel())
-        return data
-
-    def label_transform(self, data):
-        return self.label_encoder.transform(data)
-
-    def label_inverse_transform(self, data):
-        return self.label_encoder.inverse_transform(data.ravel())
-
-    """
-    def onehot_inverse_transform(self, data):
-        data = self.inverse_transform(data)
-        ret = []
-        for action in data:
-            ret.append(to_action(action))
-        return ret
-    """
+        super().fit_transform(action_space_list)
 
 
 class SampleBuilder:
