@@ -170,7 +170,7 @@ class Game(ABC):
                 black_dead_cnt += 1
         if black_dead_cnt == len(self.black_pieces):
             return 1
-        return 3
+        return 0
 
     """
         organize the turns, get the move from the white or black player
@@ -224,34 +224,32 @@ class Game(ABC):
         else:
             print("Draw -_-")
 
-    def winner_rate(self, winner):
-        if winner == 1:
-            winnerRate = self.player1.getRate()
-            opponentRate = self.player2.getRate()
-            res = 1 + pow(10, 0.1 * (winnerRate - opponentRate) / 400)
-            return 1 / res
-
-        if winner == 2:
-            winnerRate = self.player2.getRate()
-            opponentRate = self.player1.getRate()
-            res = 1 + pow(10, 0.1 * (winnerRate - opponentRate) / 400)
-            return 1 / res
+    @staticmethod
+    def calc_expected_score(old_rate, opp_rate):
+        res = 1 + 10**((opp_rate - old_rate) / 400)
+        return 1 / res
 
     @staticmethod
-    def convert_rate(rate):
+    def calc_K(rate):
         if rate < 2100:
             return 32
         if 2200 <= rate < 2400:
             return 24
         return 16
 
-    def outcome(self, playerNumber):
-        if self.get_winner() == 0:
+    @staticmethod
+    def calc_score(player_number, outcome):
+        if outcome == 0:
             return 0.5
-        if self.get_winner() == playerNumber:
+        if outcome == player_number:
             return 1
         return 0
 
+    @staticmethod
+    def calc_new_rate(player1_rate, player2_rate, outcome):
+        player1_rate += Game.calc_K(player1_rate) * (Game.calc_score(1, outcome) - Game.calc_expected_score(player1_rate, player2_rate))
+        player2_rate += Game.calc_K(player2_rate) * (Game.calc_score(2, outcome) - Game.calc_expected_score(player2_rate, player1_rate))
+        return int(player1_rate), int(player2_rate)
+
     def change_rate(self):
-        self.player1.rate += Game.convert_rate(self.player1.getRate()) * (self.outcome(1) - self.winner_rate(1))
-        self.player2.rate += Game.convert_rate(self.player2.getRate()) * (self.outcome(2) - self.winner_rate(2))
+        self.player1.rate, self.player2.rate = Game.calc_new_rate(self.player1.rate, Game.player2.rate, self.get_winner())
