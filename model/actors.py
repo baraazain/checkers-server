@@ -52,7 +52,7 @@ class Agent(Player, ABC):
 
 class RandomAgent(Agent):
     def __init__(self):
-        super().__init__(self, None, "Random", None)
+        super().__init__(None, "Random", None)
 
     def act(self, game):
         actions = game.get_all_possible_actions()
@@ -61,7 +61,7 @@ class RandomAgent(Agent):
 
 class MiniMaxAgent(Agent, ABC):
     def __init__(self, maximum_depth):
-        super().__init__(self, None, "Max", None)
+        super().__init__(None, "Max", None)
         self.maximum_depth = maximum_depth
 
     def max(self, alpha, beta, depth, game):
