@@ -24,6 +24,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ai\agent.py" />
+    <Compile Include="ai\figures.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="ai\__init__.py" />
     <Compile Include="ai\treeSearch.py" />
     <Compile Include="ai\config.py" />
@@ -38,6 +41,9 @@
     <Compile Include="model\grid.py" />
     <Compile Include="model\international_game.py" />
     <Compile Include="model\piece.py" />
+    <Compile Include="model\utils.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="model\__init__.py">
       <SubType>Code</SubType>
     </Compile>
