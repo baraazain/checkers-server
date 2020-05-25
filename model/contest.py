@@ -50,7 +50,7 @@ class DateConstraint(Constraint):
 
 
 class Contest:
-    def __init__(self, _id, name, date: datetime.date, mode: Mode):
+    def __init__(self, _id, name, date: datetime.datetime, mode: Mode):
         self.id = _id
         self.name = name
         self.date = date
@@ -61,11 +61,29 @@ class Contest:
         self.participants = []
         self.current_game = 0
 
+    # bug current game is an object
+    # bug date is an object 
+    # note: 
+    #       datetime object in python dont have a __dict__ member and I dont know why!!
+    # bug participants is list of objects
+    # bug game is list of objects
+    # consider using the other bug free method e.g json.dumps(obj, defualt = utils.to_dict)
     def from_object_to_dict(self):
        return {'id':self.id,'name':self.name,'date':self.date,'mode':self.mode,'last_game_id':self.last_game_id,'games':self.games,'constraints':self.constraints,'participants':self.participants,'current_game':self.current_game}
+
+   # your forgetting to put cls argument
+   # in python the first argument to class methods must be cls
     @classmethod
     def from_dict_to_object(dictionary):
+        # it turns out this method is wrong 
+        # dont copy the dictioary
+        # convert every member to an indivual object then use the constructor of the class
+        # without modifiying the dictionary it self
+        # like this  object = objectclass.from_dict_to_object(dictionary['object'])
+        # object2 = ... and so on
+        # then use the constructor for this class
         dictionary=deepcopy(dictionary)
+        # bug there is no constructor with zero arguments for class Contest
         c=Contest()
         c.__dict__=dictionary
         return c

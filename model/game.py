@@ -23,6 +23,7 @@ class Action:
     def from_object_to_dict(self):
        return {'id':self.id,'src':self.src.from_object_to_dict(),'dst':self.dst.from_object_to_dict(),'player':self.player.from_object_to_dict(),'capture':self.capture}
 
+   #needs to be modified check contest.py instructions
     @classmethod
     def from_dict_to_object(dictionary):
         dictionary=deepcopy(dictionary)
@@ -67,10 +68,15 @@ class Game(ABC):
         self.black_pieces = []
         self.white_pieces = []
         self.current_turn = 1
-
+    
+    # too long line
+    # needs to be splited
+    # bug date is an object
+    # bug actions, black_pieces and white_pieces are lists of objects needs to be converted one by one
     def from_object_to_dict(self):
        return {'id':self.id,'player1':self.player1.from_object_to_dict(),'player2':self.player2.from_object_to_dict(),'date':self.date,'grid':self.grid.from_object_to_dict(),'actions':self.actions,'black_pieces':self.black_pieces,'white_pieces':self.white_pieces,'current_turn':self.current_turn}
-
+   
+   #needs to be modified check contest.py instructions
     @classmethod
     def from_dict_to_object(dictionary):
         dictionary=deepcopy(dictionary)

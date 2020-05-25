@@ -12,7 +12,7 @@ class Player(ABC):
         self.name = name
         self.password = password
         self.rate = 1000
-        self.currentContest = []
+        self.current_contests = []
 
     @abstractmethod
     def act(self, game) -> Action:
@@ -26,11 +26,14 @@ class Player(ABC):
                 return True
         return False
 
+    # bug Not all members are simple
+    # current contests list of objcts needs to be converted one by one
     def from_object_to_dict(self):
        return self.__dict__
 
+   # check line 28 again
     @classmethod
-    def from_dict_to_object(dictionary):
+    def from_dict_to_object(cls, dictionary):
 
         dictionary=deepcopy(dictionary)
         p=Player()

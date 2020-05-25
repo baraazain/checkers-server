@@ -18,7 +18,13 @@ def main():
         print(game.grid)
     game.print_the_winner()
 
+import json
+
+import model.utils as utils
 
 if __name__ == '__main__':
-    main()
-
+    #main()
+    #print(dt.datetime(year=2006, month=12, day=1, hour=12, minute=0, second=0,tzinfo = tzinfor))
+    game = InternationalGame(1, RandomAgent(), RandomAgent(), dt.datetime.now())
+    game.init()
+    print(utils.to_json(game))

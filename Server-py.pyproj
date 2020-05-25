@@ -38,6 +38,9 @@
     <Compile Include="model\grid.py" />
     <Compile Include="model\international_game.py" />
     <Compile Include="model\piece.py" />
+    <Compile Include="model\utils.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="model\__init__.py">
       <SubType>Code</SubType>
     </Compile>

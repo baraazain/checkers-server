@@ -24,10 +24,11 @@ class Piece:
 
     @classmethod
     def from_dict_to_object(cls, dictionary):
-        dictionary = deepcopy(dictionary)
-        dictionary['cell'] = None
-        p=Piece()
-        p.__dict__ = dictionary
+        piece_type = dictionary['type']
+        piece_color = dictionary['color']
+        piece_dead = dictionary['dead']
+        p = cls(None, piece_type, piece_color)
+        p.dead = piece_dead
         return p
 
     def __str__(self):
