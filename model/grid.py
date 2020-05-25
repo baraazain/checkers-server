@@ -1,4 +1,5 @@
 from math import floor, log10
+from copy import deepcopy
 
 
 class Cell:
@@ -7,6 +8,19 @@ class Cell:
         self.r = r
         self.c = c
         self.piece = piece
+
+
+    def from_object_to_dict(self):
+       return {'r':self.r,'c':self.c,'piece':None}
+
+
+    @classmethod
+    def from_dict_to_object(dictionary):
+        dictionary=deepcopy(dictionary)
+        dictionary['piece']=None
+        c=Cell()
+        c.__dict__=dictionary
+        return c
 
     def set_type(self, _type):
         self.piece.type = _type
@@ -44,6 +58,17 @@ class Grid:
         self.n = n
         self.m = m
         self.grid = [[Cell(i, j, None) for j in range(self.m)] for i in range(self.n)]
+
+    def from_object_to_dict(self):
+       return {'n':self.n,'m':self.m, 'grid':None}
+
+    @classmethod
+    def from_dict_to_object(dictionary):
+        dictionary=deepcopy(dictionary)
+        dictionary['grid']=None
+        g=Grid()
+        g.__dict__=dictionary
+        return g
 
     def __str__(self):
         cnt_row = floor(log10(self.n)) + 1

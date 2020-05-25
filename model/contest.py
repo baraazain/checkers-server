@@ -1,5 +1,5 @@
 import datetime
-
+from copy import deepcopy
 from .actors import Player
 from .game import Mode
 from .international_game import InternationalGame
@@ -61,6 +61,14 @@ class Contest:
         self.participants = []
         self.current_game = 0
 
+    def from_object_to_dict(self):
+       return {'id':self.id,'name':self.name,'date':self.date,'mode':self.mode,'last_game_id':self.last_game_id,'games':self.games,'constraints':self.constraints,'participants':self.participants,'current_game':self.current_game}
+    @classmethod
+    def from_dict_to_object(dictionary):
+        dictionary=deepcopy(dictionary)
+        c=Contest()
+        c.__dict__=dictionary
+        return c
     def add_new_player(self, player: Player) -> None:
         for constraint in self.constraints:
             if not constraint.is_valid(player):

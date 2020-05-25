@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from random import randrange
+from copy import deepcopy
 
 from .game import Action
 
@@ -24,6 +25,17 @@ class Player(ABC):
             if self.id == other.id:
                 return True
         return False
+
+    def from_object_to_dict(self):
+       return self.__dict__
+
+    @classmethod
+    def from_dict_to_object(dictionary):
+
+        dictionary=deepcopy(dictionary)
+        p=Player()
+        p.__dict__=dictionary
+        return p
 
 
 class Human(Player, ABC):
@@ -57,6 +69,10 @@ class RandomAgent(Agent):
     def act(self, game):
         actions = game.get_all_possible_actions()
         return actions[randrange(0, len(actions))]
+
+
+
+
 
 
 class MiniMaxAgent(Agent, ABC):
@@ -99,3 +115,5 @@ class MiniMaxAgent(Agent, ABC):
     def act(self, game):
         value, action = self.max(int(-1e9), int(1e9), 0, game)
         return action
+
+
