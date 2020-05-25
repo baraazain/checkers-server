@@ -18,7 +18,7 @@ def valid(x, y, n, m):
 
 
 def get_action_space(board_length=10, board_width=10):
-    all_list_action = []
+    all_actions_list = []
 
     for i in range(board_length):
         for j in range(board_width):
@@ -29,8 +29,8 @@ def get_action_space(board_length=10, board_width=10):
                     dir_j = move_dir[1] * r
                     if valid(i + dir_i, j + dir_j, board_length, board_width):
                         action = f"{i},{j}+{dir_i},{dir_j}"
-                        all_list_action.append(action)
-    return all_list_action
+                        all_actions_list.append(action)
+    return all_actions_list
 
 
 def evaluate(game):

@@ -1,6 +1,7 @@
 import plotly.graph_objects as go
 from model.utils import get_catagories
 
+
 def players_category_histogram(df):
     categories = get_catagories()
     traces = []
@@ -21,8 +22,11 @@ def players_category_histogram(df):
                                ticklen = 5,
                                zeroline = False,
                                ticks="outside"))
+
     fig = {'data': traces, 'layout': layout}
+
     return fig
+
 
 def registration_intensity_histogram(df):
     trace1 = go.Histogram(x = df.signup_date,
@@ -37,6 +41,7 @@ def registration_intensity_histogram(df):
     fig = {'data': data, 'layout': layout}
     
     return fig
+
 
 def player_iwin_vs_rate_scatter(df):
     trace1 = go.Scatter(
@@ -55,6 +60,7 @@ def player_iwin_vs_rate_scatter(df):
     fig = {'data': data, 'layout': layout}
     
     return fig
+
 
 def player_win_ratio_vs_rate(df):
     trace1 = go.Scatter(

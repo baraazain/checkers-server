@@ -1,3 +1,5 @@
+
+
 def classify(rate: int) -> str:
     if rate < 1200:
         return 'novices'
@@ -20,6 +22,7 @@ def classify(rate: int) -> str:
     if rate >= 2500:
         return 'Grand Master'
 
+
 def get_catagories() -> list:
     return ['novices',
                   'Class D',
@@ -31,10 +34,12 @@ def get_catagories() -> list:
                   'Master',
                   'International Master',
                   'Grand Master']
+
     
 def calc_expected_score(old_rate: int, opp_rate: int) ->float:
     res = 1 + 10**((opp_rate - old_rate) / 400)
     return 1 / res
+
 
 def calc_K(rate: int) -> int:
     if rate < 2100:
@@ -43,12 +48,14 @@ def calc_K(rate: int) -> int:
         return 24
     return 16
 
+
 def calc_score(player_number: int, outcome: int) -> int:
     if outcome == 0:
         return 0.5
     if outcome == player_number:
         return 1
     return 0
+
 
 def inverse(arg: list) -> list:
     ret = []
@@ -63,8 +70,11 @@ def inverse(arg: list) -> list:
 def calc_new_rate(player_rate: int, opp_rates: list, outcomes: list) -> int:
     score = 0
     exp_score = 0
+
     for opp_rate, outcome in zip(opp_rates, outcomes):
         score += calc_score(1, outcome)
         exp_score += calc_expected_score(player_rate, opp_rate)
+
     player_rate += calc_K(player_rate) * (score - exp_score)
+
     return int(player_rate)
