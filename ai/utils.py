@@ -125,7 +125,7 @@ class ActionEncoder(LabelEncoder):
         self.space_shape = 0
 
     def fit(self, action_space_list):
-        self.space_shape = len(action_space_list)
+        self.space_shape = np.array(action_space_list).shape
         super().fit_transform(action_space_list)
 
 

@@ -19,6 +19,4 @@ def main():
     game.print_the_winner()
 
 if __name__ == '__main__':
-    main()
-
-    
+    main()    

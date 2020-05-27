@@ -2,7 +2,9 @@ import numpy as np
 
 from model.actors import Agent
 from .treesearch import *
-from .utils import ActionEncoder, get_action_space
+from .utils import ActionEncoder, get_action_space, GameState
+
+import config
 
 
 class AlphaZero(Agent):
@@ -33,14 +35,8 @@ class AlphaZero(Agent):
         pi, values = self.mcts.get_AV()
 
         action_id, value = self.choose_action(pi, values, tau)
-        try:
-            action = self.mcts.root.edges[action_id].action
-        except KeyError:
-            print(action_id)
-            print(self.mcts.edges.keys())
-            raise RuntimeError
 
-        return action, action_id, self.mcts.root.state_stack, value, pi
+        return self.mcts[action_id], self.mcts.root.state_stack, value, pi
 
     def build_mcts(self, state_stack: StateStack, cpuct: float, model: NeuralNetwork):
         self.mcts = MCTree(Node(state_stack, None, 1), cpuct, model, self.action_encoder)
@@ -48,6 +44,10 @@ class AlphaZero(Agent):
     def on_update(self, action):
         action_id = self.action_encoder.transform([action])
         self.mcts.update_root(action_id)
+    
+    def on_start(self, game):
+        # self.build_mcts(StateStack(deepcopy(GameState(game))), config.CPUCT, load_best_model())
+        pass
     
     def act(self, game):
         pass

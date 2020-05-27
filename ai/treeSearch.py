@@ -141,3 +141,8 @@ class MCTree:
             self.expand_and_evaluate(self.root)
             self.root = self.root.edges[action_id].child_node
             self.root.parent_node = None
+            
+    def __getitem__(self, item):
+        if item not in self.root.edges.keys():
+            raise KeyError(str(item))
+        return self.root.edges[item].action
