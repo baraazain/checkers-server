@@ -30,7 +30,6 @@ class Action:
         dictionary['dst'] = Cell.from_dict(dictionary['dst'])
         dictionary['player'] = Player.from_dict(dictionary['player'])
         dictionary['capture'] = Piece.from_dict(dictionary['capture'])
-
         action = Action(None, None, None)
         action.__dict__ = dictionary
         return action
@@ -81,20 +80,16 @@ class Game(ABC):
         actionsx=[]
         black=[]
         white=[]
-        # check line 78 in contest module :)
-        for i in dictionary['actions']:
-            actionsx.append(Action.from_dict(i))
-        for j in dictionary['black_pieces']:
-            black.append(Piece.from_dict_(j))
-        for k in dictionary['white_pieces']:
-            white.append(Piece.from_dict(k))
+        for action in dictionary['actions']:
+            actionsx.append(Action.from_dict(action))
+        for black_piece in dictionary['black_pieces']:
+            black.append(Piece.from_dict_(black_piece))
+        for white_piece in dictionary['white_pieces']:
+            white.append(Piece.from_dict(white_piece))
         dictionary['actions']=actionsx
         dictionary['black_pieces'] = black
         dictionary['white_pieces'] = white
-
-        # don't use the abstract Game class :) always use the cls argument
-        # and refine you naming strategy
-        g=cls(dictionary['player1'],dictionary['player2'],datetime.date)
+        g=cls(None,None,None,None)
         g.__dict__=dictionary
         return g
 

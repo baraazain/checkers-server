@@ -14,7 +14,7 @@ class Cell:
 
     @classmethod
     def from_dict(cls, dictionary):
-        return Cell(dictionary['r'], dictionary['c'], None)
+        return cls(dictionary['r'], dictionary['c'], None)
 
     def set_type(self, _type):
         self.piece.type = _type
@@ -56,7 +56,7 @@ class Grid:
 
     @classmethod
     def from_dict(cls, dictionary):
-        return Grid(dictionary['n'], dictionary['m'])
+        return cls(dictionary['n'], dictionary['m'])
 
     def __str__(self):
         cnt_row = floor(log10(self.n)) + 1

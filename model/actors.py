@@ -1,10 +1,7 @@
 from abc import ABC, abstractmethod
 from random import randrange
 from copy import deepcopy
-# because of circular in import Contest/Player U can't use from module import class style
-# use this style then access the Contest class from the contest module
 import model as md
-
 from .game import Action
 
 
@@ -26,16 +23,12 @@ class Player(ABC):
     def from_dict(cls, dictionary):
         dictionary=deepcopy(dictionary)
         contests = []
-        
         for contest in dictionary['current_contests']:
           contests.append(md.contest.Contest.from_dict(contest))
 
         dictionary['current_contests'] = contests
-
         p = cls(None, None, None)
-
         p.__dict__ = dictionary
-
         return p
 
     def __eq__(self, other):
@@ -78,7 +71,8 @@ class RandomAgent(Agent):
     def act(self, game):
         actions = game.get_all_possible_actions()
         return actions[randrange(0, len(actions))]
-
+    def __str__(self):
+        return   self.id + self.name+  self.rate + self.password
 
 class MiniMaxAgent(Agent, ABC):
     def __init__(self, maximum_depth, _id=None, name="Max", password=None, rate=1600, current_contests=[]):

@@ -7,8 +7,7 @@ from .actors import Player
 
 
 def to_dict(obj):
-    # as datetime class has no __dict__ attribute
-    # I dont know why!!
+
     if isinstance(obj, dt.datetime):
         return dict(year=obj.year, 
                     month=obj.month, 
