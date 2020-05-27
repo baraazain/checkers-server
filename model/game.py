@@ -25,13 +25,15 @@ class Action:
     @classmethod
     def from_dict(cls,dictionary):
         dictionary=deepcopy(dictionary)
+
         dictionary['src'] = Cell.from_dict(dictionary['src'])
         dictionary['dst'] = Cell.from_dict(dictionary['dst'])
         dictionary['player'] = Player.from_dict(dictionary['player'])
-        dictionary['capture']=Piece.from_dict(dictionary['capture'])
-        a=Action( dictionary['src'],dictionary['dst'], dictionary['player'])
-        a.__dict__=dictionary
-        return a
+        dictionary['capture'] = Piece.from_dict(dictionary['capture'])
+
+        action = Action(None, None, None)
+        action.__dict__ = dictionary
+        return action
 
     def is_capture(self):
         return self.capture is not None
@@ -72,12 +74,14 @@ class Game(ABC):
     @classmethod
     def from_dict(cls,dictionary):
         dictionary=deepcopy(dictionary)
+        # same bug at contest class
         dictionary['player1'] = Player.from_dict(dictionary['player1'])
         dictionary['player2'] = Player.from_dict(dictionary['player2'])
         dictionary['grid'] = Grid.from_dict(dictionary['grid'])
         actionsx=[]
         black=[]
         white=[]
+        # check line 78 in contest module :)
         for i in dictionary['actions']:
             actionsx.append(Action.from_dict(i))
         for j in dictionary['black_pieces']:
@@ -86,9 +90,11 @@ class Game(ABC):
             white.append(Piece.from_dict(k))
         dictionary['actions']=actionsx
         dictionary['black_pieces'] = black
-        dictionary['white_pieces']=white
+        dictionary['white_pieces'] = white
 
-        g=Game(dictionary['player1'],dictionary['player2'],datetime.date)
+        # don't use the abstract Game class :) always use the cls argument
+        # and refine you naming strategy
+        g=cls(dictionary['player1'],dictionary['player2'],datetime.date)
         g.__dict__=dictionary
         return g
 

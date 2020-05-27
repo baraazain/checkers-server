@@ -13,7 +13,7 @@ class Type:
 
 
 class Piece:
-    def __init__(self, cell: Cell, _type, color):
+    def __init__(self, cell: Cell, _type, color, dead=False):
         self.color = color
         self.type = _type
         self.cell = cell
@@ -23,12 +23,11 @@ class Piece:
 
     @classmethod
     def from_dict(cls, dictionary):
+        piece_cell = dictionary['cell']
         piece_type = dictionary['type']
         piece_color = dictionary['color']
         piece_dead = dictionary['dead']
-        p = cls(None, piece_type, piece_color)
-        p.dead = piece_dead
-        return p
+        return cls(piece_cell, piece_type, piece_color, piece_dead)
 
     def __str__(self):
         return "(" + self.cell.r + "," + self.cell.c + "," + self.color + ")"

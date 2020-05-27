@@ -26,7 +26,7 @@ def to_dict(obj):
                 return {'color': obj.color, 'type':obj.type, 'dead': obj.dead, 'cell': to_dict(obj.cell)}
             else:
                 if isinstance(obj, Cell):
-                    + {'r': obj.r, 'c':obj.c, 'piece':None}
+                    return {'r': obj.r, 'c':obj.c, 'piece':None}
                 else:
                     return obj.__dict__
 

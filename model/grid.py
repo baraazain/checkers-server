@@ -14,7 +14,7 @@ class Cell:
 
     @classmethod
     def from_dict(cls, dictionary):
-        return Cell(dictionary['r'], dictionary['c'], dictionary['piece'])
+        return Cell(dictionary['r'], dictionary['c'], None)
 
     def set_type(self, _type):
         self.piece.type = _type

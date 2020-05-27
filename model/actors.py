@@ -1,19 +1,21 @@
 from abc import ABC, abstractmethod
 from random import randrange
 from copy import deepcopy
-from .contest import Contest
+# because of circular in import Contest/Player U can't use from module import class style
+# use this style then access the Contest class from the contest module
+import model as md
 
 from .game import Action
 
 
 class Player(ABC):
 
-    def __init__(self, _id, name, password):
+    def __init__(self, _id, name, password, rate=1600, current_contests= []):
         self.id = _id
         self.name = name
         self.password = password
-        self.rate = 1000
-        self.currentContest = []
+        self.rate = rate
+        self.current_contests = current_contests
 
     @abstractmethod
     def act(self, game) -> Action:
@@ -22,13 +24,18 @@ class Player(ABC):
 
     @classmethod
     def from_dict(cls, dictionary):
-        dictionary = deepcopy(dictionary)
-        result=[]
-        for i in dictionary['current_contests']:
-          result.append(Contest.from_dict(i))
-        dictionary['current_contests']=result
-        p=Player(1,"dd","pp")
-        p.__dict__=dictionary
+        dictionary=deepcopy(dictionary)
+        contests = []
+        
+        for contest in dictionary['current_contests']:
+          contests.append(md.contest.Contest.from_dict(contest))
+
+        dictionary['current_contests'] = contests
+
+        p = cls(None, None, None)
+
+        p.__dict__ = dictionary
+
         return p
 
     def __eq__(self, other):
@@ -45,8 +52,8 @@ class Human(Player, ABC):
 
 
 class ConsolePlayer(Human):
-    def __init__(self, _id, name, password):
-        super().__init__(_id, name, password)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def act(self, game):
         actions = game.get_all_possible_actions()
@@ -65,8 +72,8 @@ class Agent(Player, ABC):
 
 
 class RandomAgent(Agent):
-    def __init__(self):
-        super().__init__(None, "Random", None)
+    def __init__(self, _id=None, name="Random", password=None, rate=1600, current_contests=[]):
+        super().__init__(_id,name,password, rate, current_contests)
 
     def act(self, game):
         actions = game.get_all_possible_actions()
@@ -74,8 +81,8 @@ class RandomAgent(Agent):
 
 
 class MiniMaxAgent(Agent, ABC):
-    def __init__(self, maximum_depth):
-        super().__init__(None, "Max", None)
+    def __init__(self, maximum_depth, _id=None, name="Max", password=None, rate=1600, current_contests=[]):
+        super().__init__(_id,name, password, rate, current_contests)
         self.maximum_depth = maximum_depth
 
     def max(self, alpha, beta, depth, game):

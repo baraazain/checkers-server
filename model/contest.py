@@ -1,7 +1,8 @@
 import datetime
+
 from copy import deepcopy
-from .actors import Player
 from .game import Mode
+from .actors import Player
 from .international_game import *
 
 
@@ -62,24 +63,39 @@ class Contest:
         self.current_game = 0
 
 
-
-
     @classmethod
     def from_dict(cls,dictionary):
-        dictionary=deepcopy(dictionary)
-        gamesx=[]
-        participantsx=[]
-        for i in dictionary['games']:
-            gamesx.append(Game.from_dict(i))
+        dictionary = deepcopy(dictionary)
 
-        for j in dictionary['participants']:
-            participantsx.append(Player.from_dict(j))
+        games = []
+        participants = []
+        
+        # shity bug
+        # we can't say just player/Game it is an abstract class
+        # we need a subclass to instantiate ask zaher for help and define a way for sending data.
+        # i.e setting an id for each class and send them as headers in json files
+        
+        for game in dictionary['games']:
+            games.append(Game.from_dict(game))
 
-        dictionary['participants']=participantsx
-        dictionary['games']=gamesx
-        c=Contest(1,"baraa",datetime.datetime.now(),Mode.INTERNATIONAL)
-        c.__dict__=dictionary
-        return c
+
+        # please don't use i, j as variable in foreach
+        # use i, j, k only in case of ranges
+       
+       for participant in dictionary['participants']:
+            participants.append(Player.from_dict(participant))
+
+        dictionary['participants'] = participants
+        
+        dictionary['games'] = games
+
+        # don't use dummy data as arguments
+        # set them to None and save the time of instantiation
+        contest = Contest(None,None,None,None)
+
+        contest.__dict__ = dictionary
+
+        return contest
 
 
     def add_new_player(self, player: Player) -> None:
