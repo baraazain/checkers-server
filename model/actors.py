@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from random import randrange
 from copy import deepcopy
+from .contest import Contest
 
 from .game import Action
 
@@ -12,12 +13,24 @@ class Player(ABC):
         self.name = name
         self.password = password
         self.rate = 1000
-        self.current_contests = []
+        self.currentContest = []
 
     @abstractmethod
     def act(self, game) -> Action:
         pass
     
+
+    @classmethod
+    def from_dict(cls, dictionary):
+        dictionary = deepcopy(dictionary)
+        result=[]
+        for i in dictionary['current_contests']:
+          result.append(Contest.from_dict(i))
+        dictionary['current_contests']=result
+        p=Player(1,"dd","pp")
+        p.__dict__=dictionary
+        return p
+
     def __eq__(self, other):
         if isinstance(other, Player):
             if other is self:
@@ -25,20 +38,6 @@ class Player(ABC):
             if self.id == other.id:
                 return True
         return False
-
-    # bug Not all members are simple
-    # current contests list of objcts needs to be converted one by one
-    def from_object_to_dict(self):
-       return self.__dict__
-
-   # check line 28 again
-    @classmethod
-    def from_dict_to_object(cls, dictionary):
-
-        dictionary=deepcopy(dictionary)
-        p=Player()
-        p.__dict__=dictionary
-        return p
 
 
 class Human(Player, ABC):
@@ -72,10 +71,6 @@ class RandomAgent(Agent):
     def act(self, game):
         actions = game.get_all_possible_actions()
         return actions[randrange(0, len(actions))]
-
-
-
-
 
 
 class MiniMaxAgent(Agent, ABC):
@@ -118,5 +113,3 @@ class MiniMaxAgent(Agent, ABC):
     def act(self, game):
         value, action = self.max(int(-1e9), int(1e9), 0, game)
         return action
-
-

@@ -1,6 +1,5 @@
 import datetime as dt
 import random
-
 from model.actors import RandomAgent
 from model.international_game import InternationalGame
 
@@ -24,7 +23,7 @@ import model.utils as utils
 
 if __name__ == '__main__':
     #main()
-    #print(dt.datetime(year=2006, month=12, day=1, hour=12, minute=0, second=0,tzinfo = tzinfor))
+    print(dt.datetime(year=2006, month=12, day=1, hour=12, minute=0, second=0,tzinfo = tzinfor))
     game = InternationalGame(1, RandomAgent(), RandomAgent(), dt.datetime.now())
     game.init()
     print(utils.to_json(game))

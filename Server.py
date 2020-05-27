@@ -7,11 +7,6 @@ sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
-def from_json(jsonx):
-   pass
-
-def to_json(object):
-    return json.dumps(object.from_object_to_dict())
 
 @sio.event
 async def connect(sid, environ):

@@ -2,7 +2,7 @@ import datetime
 from copy import deepcopy
 from .actors import Player
 from .game import Mode
-from .international_game import InternationalGame
+from .international_game import *
 
 
 class Constraint:
@@ -61,32 +61,27 @@ class Contest:
         self.participants = []
         self.current_game = 0
 
-    # bug current game is an object
-    # bug date is an object 
-    # note: 
-    #       datetime object in python dont have a __dict__ member and I dont know why!!
-    # bug participants is list of objects
-    # bug game is list of objects
-    # consider using the other bug free method e.g json.dumps(obj, defualt = utils.to_dict)
-    def from_object_to_dict(self):
-       return {'id':self.id,'name':self.name,'date':self.date,'mode':self.mode,'last_game_id':self.last_game_id,'games':self.games,'constraints':self.constraints,'participants':self.participants,'current_game':self.current_game}
 
-   # your forgetting to put cls argument
-   # in python the first argument to class methods must be cls
+
+
     @classmethod
-    def from_dict_to_object(dictionary):
-        # it turns out this method is wrong 
-        # dont copy the dictioary
-        # convert every member to an indivual object then use the constructor of the class
-        # without modifiying the dictionary it self
-        # like this  object = objectclass.from_dict_to_object(dictionary['object'])
-        # object2 = ... and so on
-        # then use the constructor for this class
+    def from_dict(cls,dictionary):
         dictionary=deepcopy(dictionary)
-        # bug there is no constructor with zero arguments for class Contest
-        c=Contest()
+        gamesx=[]
+        participantsx=[]
+        for i in dictionary['games']:
+            gamesx.append(Game.from_dict(i))
+
+        for j in dictionary['participants']:
+            participantsx.append(Player.from_dict(j))
+
+        dictionary['participants']=participantsx
+        dictionary['games']=gamesx
+        c=Contest(1,"baraa",datetime.datetime.now(),Mode.INTERNATIONAL)
         c.__dict__=dictionary
         return c
+
+
     def add_new_player(self, player: Player) -> None:
         for constraint in self.constraints:
             if not constraint.is_valid(player):

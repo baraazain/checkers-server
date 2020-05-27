@@ -4,6 +4,7 @@ from copy import deepcopy
 from .piece import *
 from .actors import *
 from .grid import *
+import datetime
 
 
 class Mode:
@@ -20,17 +21,15 @@ class Action:
         self.player:Player = player
         self.capture = None
 
-    def from_object_to_dict(self):
-       return {'id':self.id,'src':self.src.from_object_to_dict(),'dst':self.dst.from_object_to_dict(),'player':self.player.from_object_to_dict(),'capture':self.capture}
 
-   #needs to be modified check contest.py instructions
     @classmethod
-    def from_dict_to_object(dictionary):
+    def from_dict(cls,dictionary):
         dictionary=deepcopy(dictionary)
-        dictionary['src'] = Cell.from_dict_to_object(dictionary['src'])
-        dictionary['dst'] = Cell.from_dict_to_object(dictionary['dst'])
-        dictionary['player'] = Player.from_dict_to_object(dictionary['player'])
-        a=Action()
+        dictionary['src'] = Cell.from_dict(dictionary['src'])
+        dictionary['dst'] = Cell.from_dict(dictionary['dst'])
+        dictionary['player'] = Player.from_dict(dictionary['player'])
+        dictionary['capture']=Piece.from_dict(dictionary['capture'])
+        a=Action( dictionary['src'],dictionary['dst'], dictionary['player'])
         a.__dict__=dictionary
         return a
 
@@ -57,7 +56,7 @@ class Game(ABC):
     def build(cls, whitePieces, blackPieces, turn):
         return None
 
-    def __init__(self, _id, player1, player2, date):
+    def __init__(self, _id, player1, player2,date):
         self.id = _id
         self.player1 = player1
         self.player2 = player2
@@ -69,21 +68,27 @@ class Game(ABC):
         self.white_pieces = []
         self.current_turn = 1
     
-    # too long line
-    # needs to be splited
-    # bug date is an object
-    # bug actions, black_pieces and white_pieces are lists of objects needs to be converted one by one
-    def from_object_to_dict(self):
-       return {'id':self.id,'player1':self.player1.from_object_to_dict(),'player2':self.player2.from_object_to_dict(),'date':self.date,'grid':self.grid.from_object_to_dict(),'actions':self.actions,'black_pieces':self.black_pieces,'white_pieces':self.white_pieces,'current_turn':self.current_turn}
-   
-   #needs to be modified check contest.py instructions
+
     @classmethod
-    def from_dict_to_object(dictionary):
+    def from_dict(cls,dictionary):
         dictionary=deepcopy(dictionary)
-        dictionary['player1'] = Player.from_dict_to_object(dictionary['player1'])
-        dictionary['player2'] = Player.from_dict_to_object(dictionary['player2'])
-        dictionary['grid'] = Grid.from_dict_to_object(dictionary['grid'])
-        g=Game()
+        dictionary['player1'] = Player.from_dict(dictionary['player1'])
+        dictionary['player2'] = Player.from_dict(dictionary['player2'])
+        dictionary['grid'] = Grid.from_dict(dictionary['grid'])
+        actionsx=[]
+        black=[]
+        white=[]
+        for i in dictionary['actions']:
+            actionsx.append(Action.from_dict(i))
+        for j in dictionary['black_pieces']:
+            black.append(Piece.from_dict_(j))
+        for k in dictionary['white_pieces']:
+            white.append(Piece.from_dict(k))
+        dictionary['actions']=actionsx
+        dictionary['black_pieces'] = black
+        dictionary['white_pieces']=white
+
+        g=Game(dictionary['player1'],dictionary['player2'],datetime.date)
         g.__dict__=dictionary
         return g
 

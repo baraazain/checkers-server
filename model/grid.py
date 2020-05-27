@@ -10,13 +10,11 @@ class Cell:
         self.piece = piece
 
 
-    def from_object_to_dict(self):
-       return {'r':self.r,'c':self.c,'piece':None}
 
 
     @classmethod
-    def from_dict_to_object(cls, dictionary):
-        return cls(dictionary['r'], dictionary['c'], dictionary['piece'])
+    def from_dict(cls, dictionary):
+        return Cell(dictionary['r'], dictionary['c'], dictionary['piece'])
 
     def set_type(self, _type):
         self.piece.type = _type
@@ -55,13 +53,9 @@ class Grid:
         self.m = m
         self.grid = [[Cell(i, j, None) for j in range(self.m)] for i in range(self.n)]
 
-    # too long name
-    # no need to put grid info only n and m
-    def from_object_to_dict(self):
-       return {'n':self.n,'m':self.m, 'grid':None}
 
     @classmethod
-    def from_dict_to_object(cls, dictionary):
+    def from_dict(cls, dictionary):
         return Grid(dictionary['n'], dictionary['m'])
 
     def __str__(self):

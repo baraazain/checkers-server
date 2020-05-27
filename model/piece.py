@@ -19,11 +19,10 @@ class Piece:
         self.cell = cell
         self.dead = False
 
-    def from_object_to_dict(self):
-        return {'color':self.color,'type':self.type,'dead':self.dead,'cell':None}
+
 
     @classmethod
-    def from_dict_to_object(cls, dictionary):
+    def from_dict(cls, dictionary):
         piece_type = dictionary['type']
         piece_color = dictionary['color']
         piece_dead = dictionary['dead']
