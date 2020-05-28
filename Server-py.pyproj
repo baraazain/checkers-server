@@ -27,6 +27,9 @@
     <Compile Include="ai\figures.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ai\standard_tree_search.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="ai\__init__.py" />
     <Compile Include="ai\treeSearch.py" />
     <Compile Include="ai\config.py" />

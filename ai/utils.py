@@ -1,7 +1,7 @@
 from collections import deque
 
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
+# from sklearn.preprocessing import LabelEncoder
 
 from model.game import Action, Game
 from model.piece import Color, Type
@@ -62,12 +62,15 @@ class GameState:
         self.board_length = game.grid.n
         self.board_width = game.grid.m
         self.terminal = game.end()
-        self.cls = game.__class__
+        self.game_class = game.__class__
 
     def get_all_possible_states(self):
-        actions, states = self.cls.build(self.white_pieces, self.black_pieces, self.turn).get_all_possible_states()
+        actions, states = self.game_class.build(self.white_pieces, self.black_pieces, self.turn).get_all_possible_states()
         ret = [GameState(state) for state in states]
         return actions, ret
+
+    def get_game(self):
+        return self.game_class.build(self.white_pieces, self.black_pieces, self.turn)
 
     def get_player_turn(self):
         return self.turn
@@ -75,6 +78,21 @@ class GameState:
     def is_terminal(self):
         return self.terminal
 
+    def __eq__(self, other):
+        if isinstance(other, GameState):
+            my_pieces = self.white_pieces + self.black_pieces
+            other_pieces = other.white_pieces + self.black_pieces
+            if my_pieces == other_pieces and self.turn == other.turn:
+                return True
+        return False
+    
+    def __hash__(self):
+        my_pieces = self.white_pieces + self.black_pieces
+        hashable = tuple()
+        for piece in my_pieces:
+            hashable = hashable + (piece,)
+        hashable = hashable + (self.turn,)
+        return hash(hashable)
 
 class StateStack:
     def __init__(self, initial_state: GameState):
@@ -118,7 +136,7 @@ class StateStack:
     def __repr__(self):
         return self.dq.__repr__()
 
-
+"""
 class ActionEncoder(LabelEncoder):
     def __init__(self):
         super().__init__()
@@ -127,7 +145,7 @@ class ActionEncoder(LabelEncoder):
     def fit(self, action_space_list):
         self.space_shape = np.array(action_space_list).shape
         super().fit_transform(action_space_list)
-
+"""
 
 class SampleBuilder:
     def __init__(self):

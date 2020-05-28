@@ -4,7 +4,7 @@ from model.actors import Agent
 from .treesearch import *
 from .utils import ActionEncoder, get_action_space, GameState
 
-import config
+# from .config import CPUCT
 
 
 class AlphaZero(Agent):

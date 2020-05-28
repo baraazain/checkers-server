@@ -4,12 +4,8 @@ from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, BatchNormaliz
 from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.optimizers import Adam
 
-run_folder = 'run/'
-run_archive_folder = './run_archive/'
 
-
-def read(run_number, version):
-    return load_model(run_folder + 'models/V(' + f"{version})" + '.h5')
+run_folder = 'data/alphazero/models/'
 
 
 def softmax_cross_entropy_with_logits(y_true, y_pred):
@@ -128,4 +124,4 @@ class NeuralNetwork:
                               batch_size=batch_size)
 
     def write(self, version):
-        self.model.save(run_folder + 'models/V(' + f"{version})" + '.h5')
+        self.model.save(run_folder + 'alphazero ' + f"{version}" + '.h5')

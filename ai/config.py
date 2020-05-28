@@ -1,13 +1,20 @@
-#### SELF PLAY
+# Training settings
+CURRENT_VERSION = '0.0.1'
+
+# Constants
 MAXIMIZER = 1
-EPISODES = 1
+
+# ========================= HYPERPARAMETERS ===============================
+
+# Selfplay
+EPISODES = 1 # How many games
 MCTS_SIMS = 50
 TURNS_UNTIL_TAU0 = 10  # turn on which it starts playing deterministically
-CPUCT = 1
-EPSILON = 0.75
+CPUCT = 1 # constant determining the level of exploration 
+EPSILON = 0.75 
 ALPHA = 0.8
 
-# resNet hyperparameters
+# resNet 
 BATCH_SIZE = 256
 EPOCHS = 1
 REG_CONST = 0.0001
@@ -23,6 +30,8 @@ HIDDEN_CNN_LAYERS = [
     {'filters': 75, 'kernel_size': (3, 3)}
 ]
 
-#### EVALUATION
+# Evaluation 
 EVAL_EPISODES = 20
 SCORING_THRESHOLD = 55
+
+# ========================================================================
