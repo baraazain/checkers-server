@@ -1,7 +1,7 @@
 from collections import deque
 
 import numpy as np
-# from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 
 from model.game import Action, Game
 from model.piece import Color, Type
@@ -136,7 +136,7 @@ class StateStack:
     def __repr__(self):
         return self.dq.__repr__()
 
-"""
+
 class ActionEncoder(LabelEncoder):
     def __init__(self):
         super().__init__()
@@ -145,7 +145,7 @@ class ActionEncoder(LabelEncoder):
     def fit(self, action_space_list):
         self.space_shape = np.array(action_space_list).shape
         super().fit_transform(action_space_list)
-"""
+
 
 class SampleBuilder:
     def __init__(self):
