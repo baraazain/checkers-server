@@ -1,9 +1,9 @@
 import plotly.graph_objects as go
-from model.utils import get_catagories
+from model.utils import get_categories
 
 
 def players_category_histogram(df):
-    categories = get_catagories()
+    categories = get_categories()
     traces = []
     for cat in reversed(categories):
         trace = go.Histogram(x = df[df.category == cat].rate,
@@ -25,6 +25,44 @@ def players_category_histogram(df):
 
     fig = {'data': traces, 'layout': layout}
 
+    return fig
+
+
+def categories_bars(df):
+    trace = go.Bar(x = df.category.unique(), y = df.category.value_counts())
+
+    layout = dict(barmode = 'group',
+                  title = 'Users ratings',
+                  xaxis= dict(title= 'Ratings',
+                              ticklen= 5,
+                              zeroline= False, 
+                              ticks="inside"),
+                  yaxis = dict(title = 'Count',
+                               ticklen = 5,
+                               zeroline = False,
+                               ticks="outside"))
+    fig = {'data': trace, 'layout': layout}
+    
+    return fig
+
+
+def categories_ratio_pie(df):
+    cats = df.category.unique()
+    players = df.category.value_counts()
+    fig = {
+      "data": [
+        {
+          "values": players,
+          "labels": cats,
+          "domain": {"x": [0, .7]},
+          "hoverinfo":"label",
+          "hole": .3,
+          "type": "pie"
+        },],
+      "layout": {
+            "title":"Categories ratio",
+        }
+    }
     return fig
 
 

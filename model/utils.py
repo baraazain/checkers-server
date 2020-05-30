@@ -23,7 +23,7 @@ def classify(rate: int) -> str:
         return 'Grand Master'
 
 
-def get_catagories() -> list:
+def get_categories() -> list:
     return ['novices',
                   'Class D',
                   'Class C',

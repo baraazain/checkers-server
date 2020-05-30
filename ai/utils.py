@@ -3,6 +3,8 @@ from collections import deque
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
+from .model import NeuralNetwork
+
 from model.game import Action, Game
 from model.piece import Color, Type
 
@@ -52,6 +54,10 @@ def evaluate(game):
     return 0
 
 
+def load_best_model() -> NeuralNetwork:
+    pass
+
+
 class GameState:
     """description of class"""
 
@@ -95,12 +101,12 @@ class GameState:
         return hash(hashable)
 
 class StateStack:
-    def __init__(self, initial_state: GameState):
-        self.head = initial_state
+    def __init__(self):
+        self.head = None
+        self.max_len = 5  # turns history
         self.max_len = 5  # turns history
         self.max_features = 5  # pieces planes (2 men) (2 kings) (1 movable pieces)
         self.dq = deque(maxlen=self.max_len)
-        self.dq.append(initial_state)
 
     def get_input_shape(self):
         return self.head.board_length, self.head.board_width, self.max_features * self.max_len
@@ -152,7 +158,7 @@ class SampleBuilder:
         self.samples = []
         self.moves = []
 
-    def commit_move(self, state_stack: StateStack, pi: np.array):
+    def add_move(self, state_stack: StateStack, pi: np.array):
         self.moves.append({'state': state_stack, 'policy': pi})
 
     def commit_sample(self, value, pov):

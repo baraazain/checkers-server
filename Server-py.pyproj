@@ -31,7 +31,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ai\__init__.py" />
-    <Compile Include="ai\treeSearch.py" />
+    <Compile Include="ai\modifed_tree_search.py" />
     <Compile Include="ai\config.py" />
     <Compile Include="controller.py" />
     <Compile Include="ai\model.py" />

@@ -4,16 +4,16 @@ from typing import Dict, Optional
 import numpy as np
 
 from model.game import Action
-from .config import EPSILON, ALPHA, MAXIMIZER
-from .utils import StateStack, evaluate, to_label, ActionEncoder
+from .config import EPSILON, ALPHA, MAXIMIZER, CPUCT
+from .utils import StateStack, evaluate, to_label, ActionEncoder, GameState, get_action_space
 from .model import NeuralNetwork
 
 
 class Node:
 
-    def __init__(self, state_stack: StateStack, parent_node, probability: float):
-        self.state_stack = state_stack
+    def __init__(self, parent_node, game_state: GameState, probability: float):
         self.parent_node: Optional[Node] = parent_node
+        self.game_state = game_state
         self.stats = {'N': 0, 'W': 0, 'Q': 0, 'P': probability}
         self.edges: Dict[int, Edge] = {}
 
@@ -29,21 +29,26 @@ class Edge:
 
 
 class MCTree:
-    def __init__(self, root: Node, CPUCT: float, model: NeuralNetwork, action_encoder: ActionEncoder):
-        self.root = root
+    def __init__(self, initial_state: GameState, model: NeuralNetwork):
+        self.root = Node(None, initial_state, 1)
         self.CPUCT = CPUCT
         self.model = model
-        self.action_encoder = action_encoder
+        self.action_encoder = ActionEncoder()
+        self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
 
     def traverse(self) -> Node:
         current_node = self.root
+        state_stack = StateStack()
 
-        while not current_node.is_leaf():
+        while current_node.edges:
+
+            state_stack.push(current_node.game_state)
+
             max_puct = -1e9
 
             noise = np.random.dirichlet([ALPHA] * len(current_node.edges))
 
-            nb = current_node.stats['N']
+            parent_visits = current_node.stats['N']
 
             simulation_edge = None
 
@@ -53,7 +58,7 @@ class MCTree:
                 else:
                     probability = edge.child_node.stats['P']
 
-                u = self.CPUCT * probability * np.sqrt(nb) / (1 + edge.child_node.stats['N'])
+                u = self.CPUCT * probability * np.sqrt(parent_visits) / (1 + edge.child_node.stats['N'])
                 q = edge.child_node.stats['Q']
 
                 if q + u > max_puct:
@@ -61,15 +66,17 @@ class MCTree:
                     simulation_edge = edge
 
             current_node = simulation_edge.child_node
-
-        return current_node
+        
+        state_stack.push(current_node.game_state)
+        
+        return current_node, state_stack
 
     @staticmethod
     def backup(leaf: Node, value: int):
-        current_player = leaf.state_stack.head.get_player_turn()
+        current_player = leaf.game_state.turn
         current_node = leaf
         while current_node is not None:
-            player_turn = current_node.state_stack.head.get_player_turn()
+            player_turn = current_node.game_state.turn
             if player_turn == current_player:
                 direction = 1
             else:
@@ -81,8 +88,8 @@ class MCTree:
             current_node = current_node.parent_node
 
     def simulate(self):
-        leaf = self.traverse()
-        value = self.expand_and_evaluate(leaf)
+        leaf, state_stack = self.traverse()
+        value = self.expand_and_evaluate(leaf, state_stack)
         self.backup(leaf, value)
 
     def get_predictions(self, state_stack: StateStack):
@@ -105,18 +112,16 @@ class MCTree:
 
         return value, probs, actions_cats, possible_actions, possible_states
 
-    def expand_and_evaluate(self, leaf: Node) -> float:
-        game_state = leaf.state_stack.head
+    def expand_and_evaluate(self, leaf: Node, state_stack:StateStack) -> float:
+        game_state = leaf.game_state
         if game_state.is_terminal():
             value = evaluate(game_state)
             return value if game_state.turn == MAXIMIZER else -value
         else:
-            value, probs, actions_ids, possible_actions, possible_states = self.get_predictions(leaf.state_stack)
+            value, probs, actions_ids, possible_actions, possible_states = self.get_predictions(state_stack)
 
             for action, action_id, new_state in zip(possible_actions, actions_ids, possible_states):
-                new_state_stack = deepcopy(leaf.state_stack)
-                new_state_stack.push(new_state)
-                child = Node(new_state_stack, leaf, probs[action_id])
+                child = Node(leaf, new_state,  probs[action_id])
                 edge = Edge(child, action, action_id)
                 leaf.edges[action_id] = edge
             return value
@@ -133,14 +138,14 @@ class MCTree:
         pi = pi / self.root.stats['N']
         return pi, values
     
-    def update_root(self, action_id):
-        if not self.root.is_leaf():
-            self.root = self.root.edges[action_id].child_node
-            self.root.parent_node = None
-        else:
-            self.expand_and_evaluate(self.root)
-            self.root = self.root.edges[action_id].child_node
-            self.root.parent_node = None
+    def update_root(self, action):
+        action_id = self.action_encoder.transform([to_label(action)])[0]
+        if not self.root.edges:
+            self.expand(self.root)
+
+        self.root = self.root.edges[action_id].child_node
+        for edge in self.root.edges.values():
+            edge.parent_node = None  
             
     def __getitem__(self, item):
         if item not in self.root.edges.keys():
