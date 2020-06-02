@@ -27,11 +27,14 @@
     <Compile Include="ai\figures.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ai\paralle_tree_search.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="ai\standard_tree_search.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ai\__init__.py" />
-    <Compile Include="ai\modifed_tree_search.py" />
+    <Compile Include="ai\modified_tree_search.py" />
     <Compile Include="ai\config.py" />
     <Compile Include="controller.py" />
     <Compile Include="ai\model.py" />

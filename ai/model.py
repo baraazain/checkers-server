@@ -111,7 +111,10 @@ class NeuralNetwork:
         policy_head = self.policy_head(layers)
 
         model = Model(inputs=[main_input], outputs=[value_head, policy_head])
-        model.compile(loss={'value_head': 'mean_squared_error', 'policy_head': softmax_cross_entropy_with_logits}
+        
+        model.compile(loss={'value_head': 'mean_squared_error', 
+                            'policy_head': softmax_cross_entropy_with_logits
+                            }
                       , optimizer=Adam(learning_rate=self.learning_rate)
                       , loss_weights={'value_head': 0.5, 'policy_head': 0.5})
         return model

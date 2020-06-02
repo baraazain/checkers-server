@@ -38,7 +38,7 @@ class MCTree:
 
     def traverse(self, node: Node) -> Node:
         current_node = node
-        while not current_node.is_leaf():
+        while current_node.edges:
             max_uct = -1e9
 
             parent_vists = current_node.stats['N']

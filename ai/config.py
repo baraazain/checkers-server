@@ -6,13 +6,13 @@ MAXIMIZER = 1
 
 # ========================= HYPERPARAMETERS ===============================
 
-# Selfplay
+# Self-play
 EPISODES = 1 # How many games
 MCTS_SIMS = 50
 TURNS_UNTIL_TAU0 = 10  # turn on which it starts playing deterministically
 CPUCT = 1 # constant determining the level of exploration 
-EPSILON = 0.75 
-ALPHA = 0.8
+EPSILON = 0.25 # Dirichlet noise amount
+ALPHA = 0.8 # prior probability
 
 # resNet 
 BATCH_SIZE = 256
@@ -27,7 +27,7 @@ HIDDEN_CNN_LAYERS = [
     {'filters': 75, 'kernel_size': (3, 3)},
     {'filters': 75, 'kernel_size': (3, 3)},
     {'filters': 75, 'kernel_size': (3, 3)},
-    {'filters': 75, 'kernel_size': (3, 3)}
+    {'filters': 75, 'kernel_size': (3, 3)},
 ]
 
 # Evaluation 

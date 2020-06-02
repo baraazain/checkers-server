@@ -54,7 +54,7 @@ class MCTree:
 
             for idx, edge in enumerate(current_node.edges.values()):
                 if current_node is self.root:
-                    probability = (EPSILON * edge.child_node.stats['P'] + (1 - EPSILON) * noise[idx])
+                    probability = ((1 - EPSILON) * edge.child_node.stats['P'] +  EPSILON * noise[idx])
                 else:
                     probability = edge.child_node.stats['P']
 
