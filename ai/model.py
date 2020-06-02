@@ -4,7 +4,6 @@ from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, BatchNormaliz
 from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.optimizers import Adam
 
-
 run_folder = 'data/alphazero/models/'
 
 
@@ -126,5 +125,5 @@ class NeuralNetwork:
         return self.model.fit(states, targets, epochs=epochs, verbose=verbose, validation_split=validation_split,
                               batch_size=batch_size)
 
-    def write(self, version):
-        self.model.save(run_folder + 'alphazero ' + f"{version}" + '.h5')
+    def write(self, version=1):
+        self.model.save(run_folder + 'alphazero ' + f"{version:0>3}" + '.h5')

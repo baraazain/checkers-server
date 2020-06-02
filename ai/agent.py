@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 import numpy as np
 
@@ -124,7 +125,10 @@ class AlphaZero(Agent):
 
         action_id, value = choose_action(pi, values, tau)
 
-        return self.mct[action_id], self.mct.root.state_stack, value, pi
+        state_stack = deepcopy(self.mct.state_stack)
+        state_stack.push(self.mct.root.game_state)
+
+        return self.mct[action_id], state_stack, value, pi
     
     def build_mct(self, game_state: GameState, model: NeuralNetwork):
         self.mct = mts.MCTree(game_state, model)

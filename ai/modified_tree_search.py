@@ -35,10 +35,11 @@ class MCTree:
         self.model = model
         self.action_encoder = ActionEncoder()
         self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
+        self.state_stack = StateStack()
 
     def traverse(self) -> Node:
         current_node = self.root
-        state_stack = StateStack()
+        state_stack = deepcopy(self.state_stack)
 
         while current_node.edges:
 
@@ -143,9 +144,10 @@ class MCTree:
         if not self.root.edges:
             self.expand(self.root)
 
+        self.state_stack.push(self.root.game_state)
+
         self.root = self.root.edges[action_id].child_node
-        for edge in self.root.edges.values():
-            edge.parent_node = None  
+        self.root.parent_node = None
             
     def __getitem__(self, item):
         if item not in self.root.edges.keys():

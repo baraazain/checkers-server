@@ -2,8 +2,11 @@ from collections import deque
 
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.models import load_model
 
-from .model import NeuralNetwork
+from .model import NeuralNetwork, run_folder, softmax_cross_entropy_with_logits
+import ai.config as config
+
 
 from model.game import Action, Game
 from model.piece import Color, Type
@@ -55,8 +58,18 @@ def evaluate(game):
 
 
 def load_best_model() -> NeuralNetwork:
-    pass
-
+    if config.CURRENT_VERSION is None:
+        config.CURRENT_VERSION = 1
+        current_model = NeuralNetwork(config.REG_CONST, config.LEARNING_RATE, 
+                                      (10,10,25), len(get_action_space()), config.HIDDEN_CNN_LAYERS)
+        current_model.write()
+        return current_model
+    print(f'loading version {config.CURRENT_VERSION}')
+    return load_model(run_folder 
+                      + 'alphazero ' 
+                      + f"{config.CURRENT_VERSION:0>3}" 
+                      + '.h5', 
+                      custom_objects={'softmax_cross_entropy_with_logits': softmax_cross_entropy_with_logits})
 
 class GameState:
     """description of class"""
@@ -128,11 +141,8 @@ class StateStack:
                 else:
                     ret[row][column][color_idx + idx] = 1
 
-                if state.turn == 1 and piece.color == Color.WHITE:
-                    ret[row][column][idx + 4] = 1
-                if state.turn == 2 and piece.color == Color.BLACK:
-                    ret[row][column][idx + 4] = 1
-
+            ret[0][0][idx + 4] = state.turn
+        
         return ret
 
     def push(self, state: GameState):

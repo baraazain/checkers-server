@@ -83,6 +83,8 @@ class MCTree:
                         simulation_edge = edge
             
                 simulation_edge.stats['W'] -= 1
+
+                simulation_edge.stats['N'] += 1
                 
                 path.append(simulation_edge)
 
@@ -112,14 +114,14 @@ class MCTree:
                 # print('waiting for edge lock')
                 with edge.in_node.lock:
                     # print('acquired edge lock')
-                    edge.stats['N'] += 1
-
                     edge.stats['W'] += value * direction + 1
 
             in_queue.task_done()
    
     @staticmethod    
     def expand(node, manager, action_encoder):
+        if node.edges:
+            return
         possible_actions, possible_states = node.game_state.get_all_possible_states()
         actions_labels = list(map(to_label, possible_actions))
         actions_ids = action_encoder.transform(actions_labels)
@@ -154,7 +156,7 @@ class MCTree:
         for i in range(sims):
             # print('waiting for leafs')
             leaf, path = self.expand_queue.get()
-            self.rollout_queue.put((leaf, path))
+            self.rollout_queue.put_nowait((leaf, path))
             # print('expanding')
             self.expand(leaf, self.manager, self.action_encoder)
         
