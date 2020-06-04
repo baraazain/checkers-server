@@ -463,7 +463,7 @@ class InternationalGame(Game):
                 actions.append(capture)
             
             if mx == value:
-                action.append(capture)
+                actions.append(capture)
 
             self.undo()
 
