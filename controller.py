@@ -12,8 +12,12 @@ from model.international_game import InternationalGame
 
 def main():
     random.seed(101)
-    game = InternationalGame(1, DummyAgent(), DummyAgent(), dt.datetime.now())
-    game.init()
+    game = InternationalGame.read()
+    game.current_turn = 2
+    print(game.grid)
+    actions = game.get_all_possible_actions()
+    for action in actions:
+        print(action)
 
     # while not game.end():
     #     action = game.get_current_player().act(game)
