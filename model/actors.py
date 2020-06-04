@@ -45,7 +45,6 @@ class ConsolePlayer(Human):
                 continue
             return actions[choice - 1]
 
-
 class Agent(Player, ABC):
     pass
 

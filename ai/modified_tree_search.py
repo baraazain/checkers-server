@@ -3,8 +3,8 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from model.game import Action
-from .config import EPSILON, ALPHA, MAXIMIZER, CPUCT
+from model.game import Action, MAXIMIZER
+from .config import EPSILON, ALPHA, CPUCT
 from .utils import StateStack, evaluate, to_label, ActionEncoder, GameState, get_action_space
 from .model import NeuralNetwork
 

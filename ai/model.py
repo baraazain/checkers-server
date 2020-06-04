@@ -124,6 +124,11 @@ class NeuralNetwork:
     def fit(self, states, targets, epochs, verbose, validation_split, batch_size):
         return self.model.fit(states, targets, epochs=epochs, verbose=verbose, validation_split=validation_split,
                               batch_size=batch_size)
+    
+    def train_on_batch(x, y=None, 
+                       sample_weight=None, class_weight=None, 
+                       reset_metrics=True, return_dict=False):
+        return self.model.train_on_batch(x, y, sample_weight, class_weight, reset_metrics, return_dict)
 
-    def write(self, version=1):
-        self.model.save(run_folder + 'alphazero ' + f"{version:0>3}" + '.h5')
+    def save(self, name='alphazero', version=1):
+        self.model.save(run_folder + name  + f" {version:0>3}" + '.h5')

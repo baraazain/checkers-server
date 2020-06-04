@@ -5,8 +5,7 @@ from math import sqrt, log
 import random
 import asyncio
 
-from model.game import Action, Game
-from .config import MAXIMIZER
+from model.game import Action, Game, MAXIMIZER
 from .utils import GameState, evaluate, to_label, ActionEncoder, get_action_space
 
 
