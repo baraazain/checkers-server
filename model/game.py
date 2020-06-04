@@ -4,6 +4,10 @@ from copy import deepcopy
 from .piece import *
 
 
+# Constants
+MAXIMIZER = 1
+
+
 class Mode:
     INTERNATIONAL = "INTERNATIONAL"
     TURKISH = "TURKISH"

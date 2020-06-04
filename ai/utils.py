@@ -1,15 +1,21 @@
 from collections import deque
 
+
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import load_model
 
+
 from .model import NeuralNetwork, run_folder, softmax_cross_entropy_with_logits
-import ai.config as config
-
-
 from model.game import Action, Game
 from model.piece import Color, Type
+
+
+import ai.config as config
+import pickle
+
+
+archive_folder = 'data/alphazero/datasets/'
 
 
 def to_label(action: Action):
@@ -58,15 +64,9 @@ def evaluate(game):
 
 
 def load_best_model() -> NeuralNetwork:
-    if config.CURRENT_VERSION is None:
-        config.CURRENT_VERSION = 1
-        current_model = NeuralNetwork(config.REG_CONST, config.LEARNING_RATE, 
-                                      (10,10,25), len(get_action_space()), config.HIDDEN_CNN_LAYERS)
-        current_model.write()
-        return current_model
     print(f'loading version {config.CURRENT_VERSION}')
     return load_model(run_folder 
-                      + 'alphazero ' 
+                      + 'best alphazero ' 
                       + f"{config.CURRENT_VERSION:0>3}" 
                       + '.h5', 
                       custom_objects={'softmax_cross_entropy_with_logits': softmax_cross_entropy_with_logits})
@@ -165,7 +165,7 @@ class ActionEncoder(LabelEncoder):
 
 class SampleBuilder:
     def __init__(self):
-        self.samples = []
+        self.samples = deque(maxlen=50000)
         self.moves = []
 
     def add_move(self, state_stack: StateStack, pi: np.array):
@@ -176,3 +176,12 @@ class SampleBuilder:
             sample['value'] = value if sample['state'].head.turn == pov else -value
             self.samples.append(sample)
         self.moves.clear()
+        
+    def save(self, version):
+        with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "wb") as f:
+            pickle.dump(dataset, f)
+            
+    @staticmethod
+    def load(version):
+        with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "rb") as f:
+            return pickle.load(f)

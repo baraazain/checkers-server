@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
+import random
+
 import numpy as np
 
 from model.actors import Agent
@@ -18,7 +20,7 @@ class DummyAgent(Agent):
 
     def act(self, game):
         actions = game.get_all_possible_actions()
-        return actions[randrange(0, len(actions))]
+        return actions[random.randrange(0, len(actions))]
 
     def on_start(self, game):
         pass

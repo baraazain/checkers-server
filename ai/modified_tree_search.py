@@ -3,8 +3,8 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from model.game import Action
-from .config import EPSILON, ALPHA, MAXIMIZER, CPUCT
+from model.game import Action, MAXIMIZER
+from .config import EPSILON, ALPHA, CPUCT
 from .utils import StateStack, evaluate, to_label, ActionEncoder, GameState, get_action_space
 from .model import NeuralNetwork
 
@@ -37,7 +37,7 @@ class MCTree:
         self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
         self.state_stack = StateStack()
 
-    def traverse(self) -> Node:
+    def traverse(self) -> (Node, StateStack):
         current_node = self.root
         state_stack = deepcopy(self.state_stack)
 
@@ -73,7 +73,7 @@ class MCTree:
         return current_node, state_stack
 
     @staticmethod
-    def backup(leaf: Node, value: int):
+    def backup(leaf: Node, value: float):
         current_player = leaf.game_state.turn
         current_node = leaf
         while current_node is not None:
@@ -141,10 +141,10 @@ class MCTree:
     
     def update_root(self, action):
         action_id = self.action_encoder.transform([to_label(action)])[0]
-        if not self.root.edges:
-            self.expand(self.root)
-
         self.state_stack.push(self.root.game_state)
+
+        if not self.root.edges:
+            self.expand_and_evaluate(self.root, self.state_stack)
 
         self.root = self.root.edges[action_id].child_node
         self.root.parent_node = None

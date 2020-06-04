@@ -49,4 +49,3 @@ class ConsolePlayer(Human):
 class Agent(Player, ABC):
     pass
 
-

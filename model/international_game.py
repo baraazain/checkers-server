@@ -452,37 +452,49 @@ class InternationalGame(Game):
         captures = self.get_all_possible_primary_captures(piece, player)
         captures = captures + self.get_all_possible_secondary_captures(piece, player)
         mx = 0
-        action = None
+        actions = []
         for capture in captures:
             self.apply_action(capture)
-            value, act = self.get_maximum_captures(piece, player)
+            value, _ = self.get_maximum_captures(piece, player)
+            
             if mx < value + 1:
                 mx = value + 1
-                action = capture
+                actions.clear()
+                actions.append(capture)
+            
+            if mx == value:
+                actions.append(capture)
+
             self.undo()
-        return mx, action
+
+        return mx, actions
 
     # @return all possible eats from current states
     def get_all_possible_captures(self):
-        actions = []
+        actions_value_pairs = []
         if self.current_turn == 1:
             # iterate over all white pieces and get the moves from the pieces
             for piece in self.white_pieces:
                 if not piece.dead:
                     if self.can_capture(piece):
-                        actions.append(self.get_maximum_captures(piece, self.player1))
+                        actions_value_pairs.append(self.get_maximum_captures(piece, self.player1))
         else:
             # iterate over all black pieces and get the moves from this pieces
             for piece in self.black_pieces:
                 if not piece.dead:
                     if self.can_capture(piece):
-                        actions.append(self.get_maximum_captures(piece, self.player2))
+                        actions_value_pairs.append(self.get_maximum_captures(piece, self.player2))
 
         mx = 0
-        for value, action in actions:
+        for value, _ in actions_value_pairs:
             mx = max(mx, value)
+        
+        captures = []
+        for value, actions_list in actions_value_pairs:
+            if value == mx:
+                captures.extend(actions_list)
 
-        return [action for value, action in actions if value == mx]
+        return captures
 
     """      
         implements king's move
@@ -622,6 +634,10 @@ class InternationalGame(Game):
         if piece is not None:
             piece.cell.piece = piece
             piece.dead = False
+        if dst.get_color() == Color.WHITE and dst.r == 0:
+            dst.set_type(Type.PAWN)
+        if dst.get_color() == Color.BLACK and dst.r == 9:
+            dst.set_type(Type.PAWN)
         src.piece = dst.piece
         dst.piece = None
         src.piece.cell = src

@@ -20,6 +20,9 @@ class MaxParticipantsConstraint(Constraint):
     def is_valid(self, player):
         return self.num_of_participants + 1 <= self.max_participant
 
+    def ababa(self):
+        return "ababa"
+
 
 class NameConstraint(Constraint):
     def __init__(self):
