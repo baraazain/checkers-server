@@ -1,5 +1,6 @@
-import json
-from model.grid import Cell
+from model import utils
+from model.actors import RandomAgent
+
 from aiohttp import web
 import socketio
 
@@ -24,6 +25,17 @@ async def print_message(sid, message):
     print(message)
     await sio.emit("message", "from server")
 
+
+@sio.on('get_player')
+async def fuck(sid,message):
+    print("Socket ID: ", sid)
+    print(message)
+    player = RandomAgent(2,"random",123456,1600)
+    await sio.emit("get_player",{
+        "data": utils.to_json(player),
+        "ababa": "ababa",
+
+    })
 
 
 

@@ -72,7 +72,7 @@ class RandomAgent(Agent):
         actions = game.get_all_possible_actions()
         return actions[randrange(0, len(actions))]
     def __str__(self):
-        return   self.id + self.name+  self.rate + self.password
+        return str(self.id) + self.name +str(self.rate)
 
 class MiniMaxAgent(Agent, ABC):
     def __init__(self, maximum_depth, _id=None, name="Max", password=None, rate=1600, current_contests=[]):

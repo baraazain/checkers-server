@@ -31,4 +31,4 @@ if __name__ == '__main__':
     player =RandomAgent()
     print(utils.to_json(player))
     p=RandomAgent().from_dict(json.loads(utils.to_json(player)))
-    print(p.name)
+    print(p)
