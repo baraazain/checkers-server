@@ -1,10 +1,21 @@
 from collections import deque
 
-import numpy as np
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.models import load_model
+
+
+from .model import NeuralNetwork, run_folder, softmax_cross_entropy_with_logits
 from model.game import Action, Game
-from model.piece import *
+from model.piece import Color, Type
+
+
+import ai.config as config
+import pickle
+
+
+archive_folder = 'data/alphazero/datasets/'
 
 
 def to_label(action: Action):
@@ -18,7 +29,7 @@ def valid(x, y, n, m):
 
 
 def get_action_space(board_length=10, board_width=10):
-    all_list_action = []
+    all_actions_list = []
 
     for i in range(board_length):
         for j in range(board_width):
@@ -29,8 +40,8 @@ def get_action_space(board_length=10, board_width=10):
                     dir_j = move_dir[1] * r
                     if valid(i + dir_i, j + dir_j, board_length, board_width):
                         action = f"{i},{j}+{dir_i},{dir_j}"
-                        all_list_action.append(action)
-    return all_list_action
+                        all_actions_list.append(action)
+    return all_actions_list
 
 
 def evaluate(game):
@@ -52,6 +63,14 @@ def evaluate(game):
     return 0
 
 
+def load_best_model() -> NeuralNetwork:
+    print(f'loading version {config.CURRENT_VERSION}')
+    return load_model(run_folder 
+                      + 'best alphazero ' 
+                      + f"{config.CURRENT_VERSION:0>3}" 
+                      + '.h5', 
+                      custom_objects={'softmax_cross_entropy_with_logits': softmax_cross_entropy_with_logits})
+
 class GameState:
     """description of class"""
 
@@ -62,12 +81,15 @@ class GameState:
         self.board_length = game.grid.n
         self.board_width = game.grid.m
         self.terminal = game.end()
-        self.cls = game.__class__
+        self.game_class = game.__class__
 
     def get_all_possible_states(self):
-        actions, states = self.cls.build(self.white_pieces, self.black_pieces, self.turn).get_all_possible_states()
+        actions, states = self.game_class.build(self.white_pieces, self.black_pieces, self.turn).get_all_possible_states()
         ret = [GameState(state) for state in states]
         return actions, ret
+
+    def get_game(self):
+        return self.game_class.build(self.white_pieces, self.black_pieces, self.turn)
 
     def get_player_turn(self):
         return self.turn
@@ -75,20 +97,35 @@ class GameState:
     def is_terminal(self):
         return self.terminal
 
+    def __eq__(self, other):
+        if isinstance(other, GameState):
+            my_pieces = self.white_pieces + self.black_pieces
+            other_pieces = other.white_pieces + self.black_pieces
+            if my_pieces == other_pieces and self.turn == other.turn:
+                return True
+        return False
+    
+    def __hash__(self):
+        my_pieces = self.white_pieces + self.black_pieces
+        hashable = tuple()
+        for piece in my_pieces:
+            hashable = hashable + (piece,)
+        hashable = hashable + (self.turn,)
+        return hash(hashable)
 
 class StateStack:
-    def __init__(self, initial_state: GameState):
-        self.head = initial_state
+    def __init__(self):
+        self.head = None
+        self.max_len = 5  # turns history
         self.max_len = 5  # turns history
         self.max_features = 5  # pieces planes (2 men) (2 kings) (1 movable pieces)
         self.dq = deque(maxlen=self.max_len)
-        self.dq.append(initial_state)
 
     def get_input_shape(self):
         return self.head.board_length, self.head.board_width, self.max_features * self.max_len
 
     def get_deep_representation_stack(self):
-        ret = np.zeros((self.head.board_length, self.head.board_width, self.max_features * self.max_len))
+        ret = np.zeros(self.get_input_shape())
         for idx, state in enumerate(reversed(self.dq)):
 
             pieces = state.white_pieces + state.black_pieces
@@ -104,14 +141,11 @@ class StateStack:
                 else:
                     ret[row][column][color_idx + idx] = 1
 
-                if state.turn == 1 and piece.color == Color.WHITE:
-                    ret[row][column][idx + 4] = 1
-                if state.turn == 2 and piece.color == Color.BLACK:
-                    ret[row][column][idx + 4] = 1
-
+            ret[0][0][idx + 4] = state.turn
+        
         return ret
 
-    def push(self, state):
+    def push(self, state: GameState):
         self.dq.append(state)
         self.head = state
 
@@ -119,51 +153,22 @@ class StateStack:
         return self.dq.__repr__()
 
 
-class ActionEncoder:
+class ActionEncoder(LabelEncoder):
     def __init__(self):
-        self.label_encoder = LabelEncoder()
-        self.one_hot_encoder = OneHotEncoder(sparse=False)
+        super().__init__()
         self.space_shape = 0
 
     def fit(self, action_space_list):
-        self.space_shape = len(action_space_list)
-        action_space_list = self.label_encoder.fit_transform(action_space_list)
-        action_space_list = action_space_list.reshape(self.space_shape, 1)
-        self.one_hot_encoder.fit(action_space_list)
-
-    def one_hot_transform(self, data):
-        data = self.label_transform(data)
-        data = data.reshape(len(data), 1)
-        data = self.one_hot_encoder.transform(data)
-        return data
-
-    def one_hot_inverse_transform(self, data):
-        data = self.one_hot_encoder.inverse_transform(data)
-        data = self.label_encoder.inverse_transform(data.ravel())
-        return data
-
-    def label_transform(self, data):
-        return self.label_encoder.transform(data)
-
-    def label_inverse_transform(self, data):
-        return self.label_encoder.inverse_transform(data.ravel())
-
-    """
-    def onehot_inverse_transform(self, data):
-        data = self.inverse_transform(data)
-        ret = []
-        for action in data:
-            ret.append(to_action(action))
-        return ret
-    """
+        self.space_shape = np.array(action_space_list).shape
+        super().fit_transform(action_space_list)
 
 
 class SampleBuilder:
     def __init__(self):
-        self.samples = []
+        self.samples = deque(maxlen=50000)
         self.moves = []
 
-    def commit_move(self, state_stack: StateStack, pi: np.array):
+    def add_move(self, state_stack: StateStack, pi: np.array):
         self.moves.append({'state': state_stack, 'policy': pi})
 
     def commit_sample(self, value, pov):
@@ -171,3 +176,12 @@ class SampleBuilder:
             sample['value'] = value if sample['state'].head.turn == pov else -value
             self.samples.append(sample)
         self.moves.clear()
+        
+    def save(self, version):
+        with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "wb") as f:
+            pickle.dump(dataset, f)
+            
+    @staticmethod
+    def load(version):
+        with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "rb") as f:
+            return pickle.load(f)

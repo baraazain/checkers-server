@@ -4,12 +4,7 @@ from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, BatchNormaliz
 from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.optimizers import Adam
 
-run_folder = 'run/'
-run_archive_folder = './run_archive/'
-
-
-def read(run_number, version):
-    return load_model(run_folder + 'models/V(' + f"{version})" + '.h5')
+run_folder = 'data/alphazero/models/'
 
 
 def softmax_cross_entropy_with_logits(y_true, y_pred):
@@ -115,7 +110,10 @@ class NeuralNetwork:
         policy_head = self.policy_head(layers)
 
         model = Model(inputs=[main_input], outputs=[value_head, policy_head])
-        model.compile(loss={'value_head': 'mean_squared_error', 'policy_head': softmax_cross_entropy_with_logits}
+        
+        model.compile(loss={'value_head': 'mean_squared_error', 
+                            'policy_head': softmax_cross_entropy_with_logits
+                            }
                       , optimizer=Adam(learning_rate=self.learning_rate)
                       , loss_weights={'value_head': 0.5, 'policy_head': 0.5})
         return model
@@ -126,6 +124,11 @@ class NeuralNetwork:
     def fit(self, states, targets, epochs, verbose, validation_split, batch_size):
         return self.model.fit(states, targets, epochs=epochs, verbose=verbose, validation_split=validation_split,
                               batch_size=batch_size)
+    
+    def train_on_batch(x, y=None, 
+                       sample_weight=None, class_weight=None, 
+                       reset_metrics=True, return_dict=False):
+        return self.model.train_on_batch(x, y, sample_weight, class_weight, reset_metrics, return_dict)
 
-    def write(self, version):
-        self.model.save(run_folder + 'models/V(' + f"{version})" + '.h5')
+    def save(self, name='alphazero', version=1):
+        self.model.save(run_folder + name  + f" {version:0>3}" + '.h5')
