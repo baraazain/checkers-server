@@ -634,6 +634,10 @@ class InternationalGame(Game):
         if piece is not None:
             piece.cell.piece = piece
             piece.dead = False
+        if dst.get_color() == Color.WHITE and dst.r == 0:
+            dst.set_type(Type.PAWN)
+        if dst.get_color() == Color.BLACK and dst.r == 9:
+            dst.set_type(Type.PAWN)
         src.piece = dst.piece
         dst.piece = None
         src.piece.cell = src
