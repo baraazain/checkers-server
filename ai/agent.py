@@ -1,17 +1,15 @@
+import random
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-import random
-
 import numpy as np
 
-from model.actors import Agent
-from .utils import ActionEncoder, get_action_space, GameState, to_label, load_best_model
-from .model import NeuralNetwork
-
-import ai.standard_tree_search as sts
 import ai.modified_tree_search as mts
+import ai.standard_tree_search as sts
 import model.game as gm
+from model.actors import Agent
+from .model import NeuralNetwork
+from .utils import GameState, load_best_model
 
 
 class DummyAgent(Agent):
@@ -46,7 +44,7 @@ class MonteCarloAgent(Agent):
         for _ in range(self.simulations_limit):
             self.mct.simulate()
    
-        actions, values, _ = self.mct.get_AV()
+        actions, values = self.mct.get_AV()
         
         mx_val = -1e9
         best_action = None
@@ -110,7 +108,7 @@ class AlphaZero(Agent):
 
     def train_act(self, tau):
         
-        def choose_action(pi, values, tau):
+        def choose_action():
             if tau == 0:
                 actions = np.argwhere(pi == np.max(pi))
                 action_idx = np.random.choice(actions.ravel())
@@ -123,9 +121,9 @@ class AlphaZero(Agent):
         for _ in range(self.simulation_limit):
             self.mct.simulate()
 
-        pi, values = self.mct.get_AV()
+        pi, values = self.mct.get_AV(tau)
 
-        action_id, value = choose_action(pi, values, tau)
+        action_id, value = choose_action()
 
         state_stack = deepcopy(self.mct.state_stack)
         state_stack.push(self.mct.root.game_state)

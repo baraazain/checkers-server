@@ -1,10 +1,8 @@
-from copy import deepcopy
-from typing import Dict, Optional
-
 import random
 from math import sqrt, log
+from typing import Dict, Optional
 
-from model.game import Action, Game,MAXIMIZER
+from model.game import Action, Game, MAXIMIZER
 from .utils import GameState, evaluate, to_label, ActionEncoder, get_action_space
 
 
@@ -12,12 +10,9 @@ class Node:
 
     def __init__(self, parent_node, game_state: GameState):
         self.game_state = game_state
-        self.stats = {'N': 0, 'W': 0, 'Q': 0}
+        self.stats = {'N': 0, 'W': 0, 'Q': 0.0}
         self.parent_node = parent_node
         self.edges: Dict[int, Edge] = {}
-
-    def is_leaf(self) -> bool:
-        return len(self.edges) <= 0
 
 
 class Edge:
@@ -28,13 +23,14 @@ class Edge:
 
 
 class MCTree:
-    
+
     def __init__(self, initial_state: GameState):
         self.root = Node(None, initial_state)
         self.action_encoder = ActionEncoder()
         self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
 
-    def traverse(self, node: Node) -> Node:
+    @staticmethod
+    def traverse(node: Node) -> Node:
         current_node = node
         while current_node.edges:
             max_uct = -1e9
@@ -50,18 +46,18 @@ class MCTree:
 
                 q = edge.child_node.stats['Q']
 
-                uct = q + sqrt(2 * log(parent_vists)/edge.child_node.stats['N'])
-                
+                uct = q + sqrt(2 * log(parent_vists) / edge.child_node.stats['N'])
+
                 if uct > max_uct:
                     max_uct = uct
                     simulation_edge = edge
-            
+
             current_node = simulation_edge.child_node
 
         return current_node
 
     @staticmethod
-    def backup(leaf: Node, value: int):
+    def backup(leaf: Node, value: float):
 
         current_player = leaf.game_state.get_player_turn()
         current_node = leaf
@@ -77,7 +73,7 @@ class MCTree:
             current_node.stats['W'] += value * direction
             current_node.stats['Q'] = current_node.stats['W'] / current_node.stats['N']
             current_node = current_node.parent_node
-        
+
     def expand(self, node: Node):
         possible_actions, possible_states = node.game_state.get_all_possible_states()
         actions_labels = list(map(to_label, possible_actions))
@@ -86,7 +82,7 @@ class MCTree:
             child = Node(node, new_state)
 
             node.edges[action_id] = Edge(child, action, action_id)
-    
+
     def simulate(self):
         if not self.root.edges:
             self.expand(self.root)
@@ -97,20 +93,20 @@ class MCTree:
             self.expand(leaf)
 
             value = self.rollout(leaf)
-        
+
         self.backup(leaf, value)
 
-    def rollout(self, node: Node) -> float:
-        current_node = node
+    @staticmethod
+    def rollout(node: Node) -> float:
         game: Game = node.game_state.get_game()
 
         while not game.end():
             actions = game.get_all_possible_actions()
             action = random.choice(actions)
             game.apply_action(action)
-        
+
         value = evaluate(game)
-        
+
         return value if node.game_state.turn == MAXIMIZER else -value
 
     def get_AV(self):
@@ -125,9 +121,9 @@ class MCTree:
             actions.append(action)
             probs.append(prob)
             values.append(value)
-            
+
         return actions, values, probs
-    
+
     def update_root(self, action):
         action_id = self.action_encoder.transform([to_label(action)])[0]
         if self.root.is_leaf():
@@ -135,4 +131,4 @@ class MCTree:
 
         self.root = self.root.edges[action_id].child_node
         for edge in self.root.edges.values():
-            edge.parent_node = None            
+            edge.parent_node = None

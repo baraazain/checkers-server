@@ -1,52 +1,42 @@
-import datetime as dt
-import random
-import copy
-import sys
-import pickle
+import time
+import multiprocessing as mp
 
-import numpy as np
-import random
-
-from ai.agent import DummyAgent
+import ai.parallel_tree_search as pts
+import ai.utils as uty
 from model.international_game import InternationalGame
 
 
+def simulate(mct):
+    for _ in range(200):
+        mct.simulate()
+    return mct
+
+
 def main():
-    # random.seed(101)
-    # game = InternationalGame.read()
-    # game.current_turn = 2
-    # print(game.grid)
-    # actions = game.get_all_possible_actions()
-    # for action in actions:
-    #     print(action)
+    game = InternationalGame(1, None, None, None)
+    game.init()
+    mct = pts.MCTree(uty.GameState(game))
+    mct1 = pts.MCTree(uty.GameState(game))
+    mct2 = pts.MCTree(uty.GameState(game))
+    mct3 = pts.MCTree(uty.GameState(game))
+    mct4 = pts.MCTree(uty.GameState(game))
 
-    # in this game the bug is within get_all_possible_states
-    # particularly in the second action
-    # the captured piece will not be removed from the grid
-    # note: this game has no move history
-    game = pickle.load(open('firstbug_game.pk', 'rb'))
-    actions, states = game.get_all_possible_states()
-    for action, state in zip(actions, states):
-        print(action)
-        print(state.grid)
-        print('--------------------------------')
+    start_t = time.monotonic()
+    with mp.Pool() as p:
+        mct, mct1, mct2, mct3, mct4 = p.map(simulate, [mct, mct1, mct2, mct3, mct4])
+    mct.dfs(mct.root, mct1.root)
+    mct.dfs(mct.root, mct2.root)
+    mct.dfs(mct.root, mct3.root)
+    mct.dfs(mct.root, mct4.root)
+    print(time.monotonic() - start_t)
 
-    # in this game the bug in within the logic of the maximum capture
-    # when we get a piece maximum capture we will force the player
-    # to play it only at the start of the capturing path
-    # in the next time if the player has another capture
-    # he can choose it rather than following the maximum capture path!!
-    # checkout the last four moves for better understanding
-    # note: this game has all playing history
-    game = pickle.load(open('secondbug_game.pk', 'rb'))
+    mct5 = pts.MCTree(uty.GameState(game))
+    start_t = time.monotonic()
+    for _ in range(800):
+        mct5.simulate()
+    print(time.monotonic() - start_t)
 
-    # while not game.end():
-    #     action = game.get_current_player().act(game)
-    #     while not game.is_legal_action(action):
-    #         action = game.get_current_player().act(game)
-    #     game.apply_action(action)
-    #     print(game.grid)
-    # game.print_the_winner()
+    # print(len(mct.tree)))
 
 
 if __name__ == '__main__':

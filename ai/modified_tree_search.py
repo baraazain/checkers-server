@@ -17,9 +17,6 @@ class Node:
         self.stats = {'N': 0, 'W': 0, 'Q': 0, 'P': probability}
         self.edges: Dict[int, Edge] = {}
 
-    def is_leaf(self) -> bool:
-        return len(self.edges) <= 0
-
 
 class Edge:
     def __init__(self, child_node: Node, action: Action, action_id: int):
@@ -55,7 +52,7 @@ class MCTree:
 
             for idx, edge in enumerate(current_node.edges.values()):
                 if current_node is self.root:
-                    probability = ((1 - EPSILON) * edge.child_node.stats['P'] +  EPSILON * noise[idx])
+                    probability = ((1 - EPSILON) * edge.child_node.stats['P'] + EPSILON * noise[idx])
                 else:
                     probability = edge.child_node.stats['P']
 
@@ -67,9 +64,9 @@ class MCTree:
                     simulation_edge = edge
 
             current_node = simulation_edge.child_node
-        
+
         state_stack.push(current_node.game_state)
-        
+
         return current_node, state_stack
 
     @staticmethod
@@ -113,7 +110,7 @@ class MCTree:
 
         return value, probs, actions_cats, possible_actions, possible_states
 
-    def expand_and_evaluate(self, leaf: Node, state_stack:StateStack) -> float:
+    def expand_and_evaluate(self, leaf: Node, state_stack: StateStack) -> float:
         game_state = leaf.game_state
         if game_state.is_terminal():
             value = evaluate(game_state)
@@ -122,12 +119,12 @@ class MCTree:
             value, probs, actions_ids, possible_actions, possible_states = self.get_predictions(state_stack)
 
             for action, action_id, new_state in zip(possible_actions, actions_ids, possible_states):
-                child = Node(leaf, new_state,  probs[action_id])
+                child = Node(leaf, new_state, probs[action_id])
                 edge = Edge(child, action, action_id)
                 leaf.edges[action_id] = edge
             return value
 
-    def get_AV(self):
+    def get_AV(self, tau):
         edges = self.root.edges
         pi = np.zeros(self.action_encoder.space_shape)
         values = np.zeros(self.action_encoder.space_shape)
@@ -136,9 +133,12 @@ class MCTree:
             pi[edge.action_id] = edge.child_node.stats['N']
             values[edge.action_id] = edge.child_node.stats['Q']
 
-        pi = pi / self.root.stats['N']
+        pi = np.power(pi, 1 / max(0.01, tau))
+
+        pi = pi / np.sum(pi)
+
         return pi, values
-    
+
     def update_root(self, action):
         action_id = self.action_encoder.transform([to_label(action)])[0]
         self.state_stack.push(self.root.game_state)
@@ -148,7 +148,7 @@ class MCTree:
 
         self.root = self.root.edges[action_id].child_node
         self.root.parent_node = None
-            
+
     def __getitem__(self, item):
         if item not in self.root.edges.keys():
             raise KeyError(str(item))
