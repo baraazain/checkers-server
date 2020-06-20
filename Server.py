@@ -9,11 +9,13 @@ app = web.Application()
 # isinstance
 sio.attach(app)
 
+
 # we can define aiohttp endpoints just as we normally
 # would with no change
 async def index(request):
     with open('index.html') as f:
         return web.Response(text=f.read(), content_type='text/html')
+
 
 # If we wanted to create a new websocket endpoint,
 # use this decorator, passing in the name of the
@@ -23,8 +25,9 @@ async def print_message(sid, message):
     # When we receive a new event of type
     # 'message' through a socket.io connection
     # we print the socket ID and the message
-    print("Socket ID: " , sid)
+    print("Socket ID: ", sid)
     print(message)
+
 
 @sio.event
 async def connect(sid, environ):
@@ -34,6 +37,7 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     print('disconnect ', sid)
+
 
 # We bind our aiohttp endpoint to our app
 # router

@@ -1,34 +1,60 @@
+"""A module that carry out the utility's used by the AI algorithms
+"""
 from collections import deque
 
+import pickle
 
 import numpy as np
+import tensorflow.keras as tk
+
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import load_model
 
-
-from .model import NeuralNetwork, run_folder, softmax_cross_entropy_with_logits
+from .model import softmax_cross_entropy_with_logits
 from model.game import Action, Game
 from model.piece import Color, Type
 
-
 import ai.config as config
-import pickle
 
+# TODO: refactor the training pipeline
 
 archive_folder = 'data/alphazero/datasets/'
+run_folder = 'data/alphazero/models/'
 
 
 def to_label(action: Action):
+    """Converts the action python object to a label string.
+
+    :param action:
+    :return:
+    """
+
     dir_r = action.dst.r - action.src.r
     dir_c = action.dst.c - action.src.c
     return f"{action.src.r},{action.src.c}+{dir_r},{dir_c}"
 
 
 def valid(x, y, n, m):
+    """Check if the coordinates are in bounds.
+
+    :param x:
+    :param y:
+    :param n:
+    :param m:
+    :return:
+    """
+
     return 0 <= x < n and 0 <= y < m
 
 
 def get_action_space(board_length=10, board_width=10):
+    """Generates all possible actions for a piece in the game of checkers.
+
+    :param board_length:
+    :param board_width:
+    :return:
+    """
+
     all_actions_list = []
 
     for i in range(board_length):
@@ -45,6 +71,13 @@ def get_action_space(board_length=10, board_width=10):
 
 
 def evaluate(game):
+    """Calculates the value of the end game from the maximizer player point of view.
+
+    :param game:
+    :return: the value of the end game
+    :rtype: int
+    """
+
     cnt = 0
     for piece in game.white_pieces:
         if piece.dead:
@@ -56,23 +89,32 @@ def evaluate(game):
     for piece in game.black_pieces:
         if piece.dead:
             cnt += 1
-    
+
     if len(game.black_pieces) == cnt:
         return 1
 
     return 0
 
 
-def load_best_model() -> NeuralNetwork:
+def load_best_model() -> tk.models.Model:
+    """loads the current version of AlphaZero model.
+
+    :return: AlphaZero neural network
+    """
+
     print(f'loading version {config.CURRENT_VERSION}')
-    return load_model(run_folder 
-                      + 'best alphazero ' 
-                      + f"{config.CURRENT_VERSION:0>3}" 
-                      + '.h5', 
+    return load_model(run_folder
+                      + 'best alphazero '
+                      + f"{config.CURRENT_VERSION:0>3}"
+                      + '.h5',
                       custom_objects={'softmax_cross_entropy_with_logits': softmax_cross_entropy_with_logits})
 
+
+def save_model(model: tk.models.Model, name='alphazero', version=1):
+    model.save(run_folder + name + f" {version:0>3}" + '.h5')
+
+
 class GameState:
-    """description of class"""
 
     def __init__(self, game: Game):
         self.white_pieces = game.white_pieces
@@ -84,7 +126,8 @@ class GameState:
         self.game_class = game.__class__
 
     def get_all_possible_states(self):
-        actions, states = self.game_class.build(self.white_pieces, self.black_pieces, self.turn).get_all_possible_states()
+        actions, states = self.game_class.build(self.white_pieces, self.black_pieces,
+                                                self.turn).get_all_possible_states()
         ret = [GameState(state) for state in states]
         return actions, ret
 
@@ -100,11 +143,11 @@ class GameState:
     def __eq__(self, other):
         if isinstance(other, GameState):
             my_pieces = self.white_pieces + self.black_pieces
-            other_pieces = other.white_pieces + self.black_pieces
+            other_pieces = other.white_pieces + other.black_pieces
             if my_pieces == other_pieces and self.turn == other.turn:
                 return True
         return False
-    
+
     def __hash__(self):
         my_pieces = self.white_pieces + self.black_pieces
         hashable = tuple()
@@ -113,36 +156,47 @@ class GameState:
         hashable = hashable + (self.turn,)
         return hash(hashable)
 
+
 class StateStack:
+    """A stack for saving playing history
+    """
+
     def __init__(self):
         self.head = None
         self.max_len = 5  # turns history
-        self.max_len = 5  # turns history
-        self.max_features = 5  # pieces planes (2 men) (2 kings) (1 movable pieces)
+        self.max_features = 5  # pieces planes (2 men) (2 kings) (1 turn flag)
         self.dq = deque(maxlen=self.max_len)
 
     def get_input_shape(self):
         return self.head.board_length, self.head.board_width, self.max_features * self.max_len
 
     def get_deep_representation_stack(self):
+        # initialize the image stack with zeros
         ret = np.zeros(self.get_input_shape())
+
+        # for each turn history mask it as a numpy array
         for idx, state in enumerate(reversed(self.dq)):
-
+            # we join the board pieces in one list for the ease of implementation
             pieces = state.white_pieces + state.black_pieces
-
+            # calculates the index of the turn planes as each turn is defined as 5 planes
             idx *= self.max_features
+
             for piece in pieces:
                 row = piece.cell.r
                 column = piece.cell.c
+
                 color_idx = 0 if piece.color == Color.WHITE else 1
 
                 if piece.type == Type.KING:
+                    # Masks the king pieces in (2, 4) planes for the (white, black) players respectively
                     ret[row][column][color_idx + idx + 2] = 1
                 else:
+                    # Masks the pawn pieces in (1, 3) planes for the (white, black) players respectively
                     ret[row][column][color_idx + idx] = 1
 
+            # masks the turn flag in the last plane (5) of the turn planes
             ret[0][0][idx + 4] = state.turn
-        
+
         return ret
 
     def push(self, state: GameState):
@@ -154,6 +208,8 @@ class StateStack:
 
 
 class ActionEncoder(LabelEncoder):
+    """A utility to transform the action labels to unique integers and vice versa
+    """
     def __init__(self):
         super().__init__()
         self.space_shape = 0
@@ -171,17 +227,32 @@ class SampleBuilder:
     def add_move(self, state_stack: StateStack, pi: np.array):
         self.moves.append({'state': state_stack, 'policy': pi})
 
-    def commit_sample(self, value, pov):
+    def commit_sample(self, value: int, pov: int):
+        """Saves the game sample.
+
+        :param value: the evaluation of the end game
+        :param pov: the evaluation point of view
+        :return:
+        """
         for sample in self.moves:
             sample['value'] = value if sample['state'].head.turn == pov else -value
             self.samples.append(sample)
         self.moves.clear()
-        
-    def save(self, version):
+
+    def save(self, version: int):
+        """write the samples as a dataset file to the archive folder.
+
+        :param version: the dataset version
+        :return:
+        """
         with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "wb") as f:
-            pickle.dump(dataset, f)
-            
+            pickle.dump(self, f)
+
     @staticmethod
-    def load(version):
+    def load(version: int):
+        """loads a specific version of the datasets in the archive folder
+        :param version: the dataset version
+        :return:
+        """
         with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "rb") as f:
             return pickle.load(f)

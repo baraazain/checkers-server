@@ -454,6 +454,7 @@ class InternationalGame(Game):
         mx = 0
         actions = []
         for capture in captures:
+            self.path.append(capture)
             self.apply_action(capture)
             value, _ = self.get_maximum_captures(piece, player)
             
@@ -461,11 +462,15 @@ class InternationalGame(Game):
                 mx = value + 1
                 actions.clear()
                 actions.append(capture)
+                self.paths.clear()
+                self.paths.append(self.path)
             
             if mx == value:
                 actions.append(capture)
+                self.paths.append(self.path)
 
             self.undo()
+            self.path.pop()
 
         return mx, actions
 
@@ -509,6 +514,9 @@ class InternationalGame(Game):
         src: Cell = action.src
         dst: Cell = action.dst
 
+
+        # print("src: ", src, dst);
+
         # we remove the src piece and add the dst piece
         # remove the src piece
         # self.removePiece(src.piece)
@@ -518,9 +526,8 @@ class InternationalGame(Game):
         """
 
         # move the piece from src to dst and empty src
-        src.piece.cell = dst
-        dst.piece = src.piece
-        src.piece = None
+
+        # print("PIECE: ", dst)
 
         # add the dst piece
         # self.addPiece(dst.piece)
@@ -528,8 +535,11 @@ class InternationalGame(Game):
         # the direction that src has to move to reach dst.
         dirR = (dstR - srcR) // abs(dstR - srcR)
         dirC = (dstC - srcC) // abs(dstC - srcC)
-        curR = srcR
-        curC = srcC
+        curR = srcR + dirR
+        curC = srcC + dirC
+
+        # print(self.grid)
+
         while curR != dstR:
             cur: Cell = self.grid[curR][curC]
             """ 
@@ -539,11 +549,19 @@ class InternationalGame(Game):
             if cur.piece is not None:
                 action.capture = cur.piece
                 cur.piece.dead = True
+                # print("CURR: ", curR+1, curC+1);
                 # self.removePiece(cur.piece)
                 cur.piece = None
                 break
             curR += dirR
             curC += dirC
+
+        src.piece.cell = dst
+        dst.piece = src.piece
+        src.piece = None
+
+        # print(self.grid)
+
         if action.capture is not None and self.can_capture(self.grid[dst.r][dst.c].piece):
             return
         self.current_turn = 3 - self.current_turn
@@ -591,6 +609,8 @@ class InternationalGame(Game):
         dstR = dst.r
         dstC = dst.c
         # if the move is king move
+
+        # print(src, src.piece)
         if src.get_type() == Type.KING:
             self.move_like_king(action)
             return
@@ -619,25 +639,26 @@ class InternationalGame(Game):
         # if a pawn reaches the end, it'll promoted to king
         if dst.get_color() == Color.WHITE and dst.r == 0:
             dst.set_type(Type.KING)
+            action.capture.promote = True
         if dst.get_color() == Color.BLACK and dst.r == 9:
             dst.set_type(Type.KING)
+            action.capture.promote = True
         if action.capture is not None and self.can_capture(self.grid[dstR][dstC].piece):
             return
         self.current_turn = 3 - self.current_turn
 
     # undo the last move
     def undo(self):
-        action: Action = self.actions.pop()
-        src = action.src
-        dst = action.dst
-        piece = action.capture
-        if piece is not None:
-            piece.cell.piece = piece
-            piece.dead = False
-        if dst.get_color() == Color.WHITE and dst.r == 0:
-            dst.set_type(Type.PAWN)
-        if dst.get_color() == Color.BLACK and dst.r == 9:
-            dst.set_type(Type.PAWN)
-        src.piece = dst.piece
-        dst.piece = None
-        src.piece.cell = src
+        if self.actions:
+            action: Action = self.actions.pop()
+            src = action.src
+            dst = action.dst
+            piece = action.capture
+            if piece is not None:
+                piece.cell.piece = piece
+                piece.dead = False
+            if action.promote:
+                dst.set_type(Type.PAWN)
+            src.piece = dst.piece
+            dst.piece = None
+            src.piece.cell = src

@@ -21,6 +21,7 @@ class Action:
         self.dst = dst
         self.player = player
         self.capture = None
+        self.promote = False
 
     def is_capture(self):
         return self.capture is not None
@@ -56,6 +57,8 @@ class Game(ABC):
         self.black_pieces = []
         self.white_pieces = []
         self.current_turn = 1
+        self.paths = []
+        self.path = []
 
     @abstractmethod
     def init(self):
@@ -256,4 +259,4 @@ class Game(ABC):
         return int(player1_rate), int(player2_rate)
 
     def change_rate(self):
-        self.player1.rate, self.player2.rate = Game.calc_new_rate(self.player1.rate, Game.player2.rate, self.get_winner())
+        self.player1.rate, self.player2.rate = Game.calc_new_rate(self.player1.rate, self.player2.rate, self.get_winner())

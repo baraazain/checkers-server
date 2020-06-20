@@ -1,18 +1,27 @@
-import random
-from abc import ABC, abstractmethod
+"""The agent module carry out the implementation of AI players.
+
+"""
+from abc import ABC
 from copy import deepcopy
 
+import random
+import time
+
+import tensorflow.keras as tk
 import numpy as np
 
 import ai.modified_tree_search as mts
 import ai.standard_tree_search as sts
 import model.game as gm
 from model.actors import Agent
-from .model import NeuralNetwork
 from .utils import GameState, load_best_model
 
 
 class DummyAgent(Agent):
+    """A dumb player that takes random actions.
+
+    """
+
     def __init__(self):
         super().__init__(0, "Dummy", None)
 
@@ -28,8 +37,12 @@ class DummyAgent(Agent):
 
 
 class MonteCarloAgent(Agent):
+    """A player that uses monte carlo tree search algorithm to take actions.
+
+    """
+
     def __init__(self, simulations_limit):
-        super().__init__(0, "Monte Carlo", None)
+        super().__init__(0, "MonteCarlo", None)
         self.simulations_limit = simulations_limit
         self.mct = None
     
@@ -41,7 +54,8 @@ class MonteCarloAgent(Agent):
     
     def act(self, game):
 
-        for _ in range(self.simulations_limit):
+        start_time = time.monotonic()
+        while time.monotonic() - start_time < self.simulations_limit:
             self.mct.simulate()
    
         actions, values = self.mct.get_AV()
@@ -58,48 +72,15 @@ class MonteCarloAgent(Agent):
 
 
 class MiniMaxAgent(Agent, ABC):
-    def __init__(self, maximum_depth):
+    def __init__(self):
         super().__init__(None, "Max", None)
-        self.maximum_depth = maximum_depth
-
-    def max(self, alpha, beta, depth, game):
-        if depth == self.maximum_depth or game.end():
-            return self.evaluate(game), None
-        return_action = None
-        actions, states = game.get_all_possible_states()
-        for action, state in zip(actions, states):
-            value, _ = self.min(alpha, beta, depth + 1, state)
-            if alpha < value:
-                alpha = value
-                return_action = action
-            if alpha >= beta:
-                return beta, None
-        return alpha, return_action
-
-    def min(self, alpha, beta, depth, game):
-        if depth == self.maximum_depth or game.end():
-            return self.evaluate(game), None
-        return_action = None
-        actions, states = game.get_all_possible_states()
-        for action, state in zip(actions, states):
-            value, _ = self.max(alpha, beta, depth + 1, state)
-            if beta > value:
-                beta = value
-                return_action = action
-            if alpha >= beta:
-                return alpha, None
-        return beta, return_action
-
-    @abstractmethod
-    def evaluate(self, game):
-        pass
-
-    def act(self, game):
-        value, action = self.max(int(-1e9), int(1e9), 0, game)
-        return action
 
 
 class AlphaZero(Agent):
+    """A player that uses reinforcement learning and neural networks to take actions.
+
+    """
+
     def __init__(self, simulation_limit):
         super().__init__(None, "AlphaZero", None)
         self.simulation_limit = simulation_limit
@@ -107,21 +88,23 @@ class AlphaZero(Agent):
         self.mct = None
 
     def train_act(self, tau):
-        
-        def choose_action():
-            if tau == 0:
-                actions = np.argwhere(pi == np.max(pi))
-                action_idx = np.random.choice(actions.ravel())
-            else:
-                outcomes = np.random.multinomial(1, pi)
-                action_idx = np.where(outcomes == 1)[0][0]
 
-            return action_idx, values[action_idx]
-        
         for _ in range(self.simulation_limit):
             self.mct.simulate()
 
         pi, values = self.mct.get_AV(tau)
+
+        def choose_action():
+            if tau == 0:
+                # playing deterministically => always choose the maximum probability
+                actions = np.argwhere(pi == np.max(pi))
+                action_idx = np.random.choice(actions.ravel())
+            else:
+                # take an experiment with pi as a probability vector then choose the action which happened
+                outcomes = np.random.multinomial(1, pi)
+                action_idx = np.where(outcomes == 1)[0][0]
+
+            return action_idx, values[action_idx]
 
         action_id, value = choose_action()
 
@@ -130,7 +113,7 @@ class AlphaZero(Agent):
 
         return self.mct[action_id], state_stack, value, pi
     
-    def build_mct(self, game_state: GameState, model: NeuralNetwork):
+    def build_mct(self, game_state: GameState, model: tk.models.Model):
         self.mct = mts.MCTree(game_state, model)
 
     def on_update(self, action):

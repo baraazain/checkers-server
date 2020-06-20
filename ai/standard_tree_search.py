@@ -1,103 +1,141 @@
-import random
+"""A module that carry out the implementation of standard Monte Carlo tree search algorithm.
+"""
 from math import sqrt, log
-from typing import Dict, Optional
+from typing import Optional, List, Tuple
+
+import random
 
 from model.game import Action, Game, MAXIMIZER
 from .utils import GameState, evaluate, to_label, ActionEncoder, get_action_space
 
 
 class Node:
+    """Monte Carlo tree node.
+    """
 
-    def __init__(self, parent_node, game_state: GameState):
+    def __init__(self, game_state: GameState):
         self.game_state = game_state
-        self.stats = {'N': 0, 'W': 0, 'Q': 0.0}
-        self.parent_node = parent_node
-        self.edges: Dict[int, Edge] = {}
+        self.edges = {}
 
 
 class Edge:
-    def __init__(self, child_node: Optional[Node], action: Action, action_id: int):
-        self.child_node = child_node
+    """Monte Carlo tree edge.
+    """
+
+    def __init__(self, in_node: Node, out_node: Optional[Node], action: Action, action_id: int):
+        self.in_node = in_node
+        self.out_node = out_node
+        self.stats = {'W': 0, 'N': 0}
         self.action = action
         self.action_id = action_id
 
 
 class MCTree:
+    """Monte Carlo tree.
+    """
 
     def __init__(self, initial_state: GameState):
-        self.root = Node(None, initial_state)
+        self.root = Node(initial_state)
         self.action_encoder = ActionEncoder()
         self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
+        self.graph = {initial_state: self.root}
 
     @staticmethod
-    def traverse(node: Node) -> Node:
+    def traverse(node: Node) -> Tuple[Node, List[Edge]]:
+        """Search in the tree for the best leaf.
+        :param node: The starting node
+        :return: The best leaf node along with the path list
+        """
+
         current_node = node
+        path: List[Edge] = []
+
         while current_node.edges:
             max_uct = -1e9
 
-            parent_vists = current_node.stats['N']
+            # Calculates the children visits sum to get current node visits.
+            nb = 0
+            for edge in current_node.edges.values():
+                nb += edge.stats['N']
 
             simulation_edge = None
 
-            for idx, edge in enumerate(current_node.edges.values()):
-                if edge.child_node.stats['N'] == 0:
+            for edge in current_node.edges.values():
+                if edge.stats['N'] == 0:
+                    # If we have never visited this child then the uct is going to be infinite.
                     simulation_edge = edge
                     break
 
-                q = edge.child_node.stats['Q']
+                # Calculates the average of the rewards.
+                q = edge.stats['W'] / edge.stats['N']
 
-                uct = q + sqrt(2 * log(parent_vists) / edge.child_node.stats['N'])
+                # Calculates the upper confidence bound defined by the equation.
+                uct = q + sqrt(2 * log(nb) / edge.stats['N'])
 
+                # Maximize uct.
                 if uct > max_uct:
                     max_uct = uct
                     simulation_edge = edge
 
-            current_node = simulation_edge.child_node
+            path.append(simulation_edge)
 
-        return current_node
+            # Traverse down the tree.
+            current_node = simulation_edge.out_node
+
+        return current_node, path
 
     @staticmethod
-    def backup(leaf: Node, value: float):
+    def backup(leaf: Node, path: List[Edge], value: int):
+        """Backpropagates the value of endgame to the root node.
+
+        :param leaf: The starting leaf node
+        :param path: The path back to root
+        :param value: The value of the leaf node
+        :return:
+        """
 
         current_player = leaf.game_state.get_player_turn()
-        current_node = leaf
 
-        while current_node is not None:
-            player_turn = current_node.game_state.get_player_turn()
+        for edge in path:
+            player_turn = edge.in_node.game_state.turn
             if player_turn == current_player:
                 direction = 1
             else:
                 direction = -1
 
-            current_node.stats['N'] += 1
-            current_node.stats['W'] += value * direction
-            current_node.stats['Q'] = current_node.stats['W'] / current_node.stats['N']
-            current_node = current_node.parent_node
+            edge.stats['N'] += 1
 
-    def expand(self, node: Node):
-        possible_actions, possible_states = node.game_state.get_all_possible_states()
+            edge.stats['W'] += value * direction
+
+    def expand(self, leaf: Node):
+        """
+
+        :param leaf: The leaf node to expand
+        :return:
+        """
+        possible_actions, possible_states = leaf.game_state.get_all_possible_states()
+        # Get actions unique keys
         actions_labels = list(map(to_label, possible_actions))
         actions_ids = self.action_encoder.transform(actions_labels)
+
         for action, action_id, new_state in zip(possible_actions, actions_ids, possible_states):
-            child = Node(node, new_state)
+            # Check if the new state is already in the graph dictionary
+            try:
+                child = self.graph[new_state]
+            except KeyError:
+                child = Node(new_state)
+                self.graph[new_state] = child
 
-            node.edges[action_id] = Edge(child, action, action_id)
-
-    def simulate(self):
-        if not self.root.edges:
-            self.expand(self.root)
-        leaf = self.traverse(self.root)
-        if leaf.stats['N'] == 0:
-            value = self.rollout(leaf)
-        else:
-            self.expand(leaf)
-
-            value = self.rollout(leaf)
-
-        self.backup(leaf, value)
+            leaf.edges[action_id] = Edge(leaf, child, action, action_id)
 
     @staticmethod
-    def rollout(node: Node) -> float:
+    def rollout(node: Node):
+        """Play a randomized game and evaluates the resulting end game.
+
+        :param node: The node which carry out the starting state
+        :return: End game evaluation
+        """
+
         game: Game = node.game_state.get_game()
 
         while not game.end():
@@ -107,28 +145,45 @@ class MCTree:
 
         value = evaluate(game)
 
+        # We need to set the correct value of the evaluation as evaluate function
+        # calculates it from maximizer point of view
         return value if node.game_state.turn == MAXIMIZER else -value
 
-    def get_AV(self):
-        edges = self.root.edges
-        probs = []
-        actions = []
-        values = []
-        for edge in edges.values():
-            prob = edge.child_node.stats['N'] / self.root.stats['N']
-            value = edge.child_node.stats['Q']
-            action = edge.action
-            actions.append(action)
-            probs.append(prob)
-            values.append(value)
+    def simulate(self):
+        """Do a one time monte carlo tree search simulation
 
-        return actions, values, probs
-
-    def update_root(self, action):
-        action_id = self.action_encoder.transform([to_label(action)])[0]
-        if self.root.is_leaf():
+        :return:
+        """
+        if not self.root.edges:
             self.expand(self.root)
 
-        self.root = self.root.edges[action_id].child_node
-        for edge in self.root.edges.values():
-            edge.parent_node = None
+        leaf, path = self.traverse(self.root)
+
+        self.expand(leaf)
+
+        value = self.rollout(leaf)
+
+        self.backup(leaf, path, value)
+
+    def get_AV(self) -> Tuple[List[Action], List[float]]:
+        """Calculates the action value pairs.
+
+        :return: A tuple of actions and their respective rewards mean
+        """
+
+        edges = self.root.edges
+        actions = []
+        values = []
+
+        for edge in edges.values():
+            actions.append(edge.action)
+            values.append(edge.stats['N'])
+
+        return actions, values
+
+    def update_root(self, action: Action):
+        action_id = self.action_encoder.transform([to_label(action)])[0]
+        if not self.root.edges:
+            self.expand(self.root)
+
+        self.root = self.root.edges[action_id].out_node
