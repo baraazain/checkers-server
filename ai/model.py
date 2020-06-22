@@ -12,7 +12,7 @@ def softmax_cross_entropy_with_logits(y_true, y_pred):
     pi = y_true
 
     # mask the illegal actions
-    zero = tf.zeros(shape=tf.shape(pi), dtype=tf.float32)
+    zero = tf.zeros(shape=tf.shape(pi))
     where = tf.equal(pi, zero)
 
     # remove the logits of illegal actions
@@ -37,7 +37,6 @@ def cnn_block(input_block, filters, kernel_size, regularization_const):
                          kernel_size,
                          padding='same',
                          activation='linear',
-                         use_bias=False,
                          kernel_regularizer=tk.regularizers.l2(regularization_const))(input_block)
 
     x = tk.layers.BatchNormalization(axis=1)(x)
@@ -61,14 +60,13 @@ def residual_block(input_block, filters, kernel_size, regularization_const):
                          kernel_size,
                          padding='same',
                          activation='linear',
-                         use_bias=False,
                          kernel_regularizer=tk.regularizers.l2(regularization_const))(x)
 
     x = tk.layers.BatchNormalization(axis=1)(x)
 
     x = tk.layers.add([input_block, x])
 
-    x = tk.layers.LeakyReLU(x)
+    x = tk.layers.LeakyReLU()(x)
 
     return x
 
@@ -83,7 +81,6 @@ def value_head(input_block, regularization_const):
                             kernel_size=(1, 1),
                             padding='same',
                             activation='linear',
-                            use_bias=False,
                             kernel_regularizer=tk.regularizers.l2(regularization_const))(input_block)
 
     head = tk.layers.BatchNormalization(axis=1)(head)
@@ -94,14 +91,12 @@ def value_head(input_block, regularization_const):
 
     head = tk.layers.Dense(units=128,
                            activation='linear',
-                           use_bias=False,
                            kernel_regularizer=tk.regularizers.l2(regularization_const))(head)
 
     head = tk.layers.LeakyReLU()(head)
 
     head = tk.layers.Dense(units=1,
                            activation='tanh',
-                           use_bias=False,
                            kernel_regularizer=tk.regularizers.l2(regularization_const),
                            name='value_head')(head)
 
@@ -119,7 +114,6 @@ def policy_head(input_block, output_dim, regularization_const):
                             kernel_size=(1, 1),
                             padding='same',
                             activation='linear',
-                            use_bias=False,
                             kernel_regularizer=tk.regularizers.l2(regularization_const))(input_block)
 
     head = tk.layers.BatchNormalization(axis=1)(head)
@@ -130,14 +124,13 @@ def policy_head(input_block, output_dim, regularization_const):
 
     head = tk.layers.Dense(output_dim,
                            activation='linear',
-                           use_bias=False,
                            kernel_regularizer=tk.regularizers.l2(regularization_const),
                            name='policy_head')(head)
 
     return head
 
 
-def build_alphazero_model(input_dim, output_dim, residual_blocks, filters, regularization_const):
+def build_alphazero_model(input_dim, output_dim, residual_blocks, filters, regularization_const) -> tk.models.Model:
     """Creates AlphaZero model as defined in AlphaZero paper
     :param input_dim:
     :param output_dim:
@@ -146,12 +139,13 @@ def build_alphazero_model(input_dim, output_dim, residual_blocks, filters, regul
     :param regularization_const:
     :return:
     """
-    main_input = tk.layers.Input(shape=input_dim, name='main_input')
+
+    main_input = tk.layers.Input(shape=input_dim, name='main_input', dtype='float32')
 
     x = cnn_block(main_input, filters, 3, regularization_const)
 
     for _ in range(residual_blocks):
-        x = residual_blocks(x, filters, 3, regularization_const)
+        x = residual_block(x, filters, 3, regularization_const)
 
     v_head = value_head(x, regularization_const)
 

@@ -1,22 +1,3 @@
-import multiprocessing as mp
-import time
-
-import ai.parallel_tree_search as pts
-import ai.utils as uty
-from model.international_game import InternationalGame
-import random
-import copy
-import sys
-
-import pickle
-
-import numpy as np
-import random
-
-from ai.agent import DummyAgent
-from model.international_game import InternationalGame
-
-
 # def simulate(mct):
 #     for _ in range(200):
 #         mct.simulate()
@@ -25,6 +6,21 @@ from model.international_game import InternationalGame
 
 def main():
     print('Hello, World')
+
+    # tree_error = None
+    # reject_error = None
+    # with tf.device('/device:GPU:0'):
+    #     start_time = time.monotonic()
+    #     try:
+    #         train_manger(1)
+    #     except RejectedActionError as reject_e:
+    #         print('rejected')
+    #         reject_error = reject_e
+    #     except TreeError as tree_e:
+    #         print('search error')
+    #         tree_error = tree_e
+    #     print(f'slept for {time.monotonic() - start_time}')
+
     # game = InternationalGame(1, DummyAgent(), DummyAgent(), None)
     # game.init()
     # from ai.alpha_beta_search import AlphaBetaSearch

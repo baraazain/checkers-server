@@ -1,6 +1,5 @@
-from typing import Optional, List, Dict
-
 import time
+from typing import Optional, List, Dict
 
 from model.game import Action, MAXIMIZER
 from .utils import GameState
@@ -200,7 +199,6 @@ class AlphaBetaSearch:
         i = 0
         ret_action = None
         self.timeout_flag = False
-        self.transposition_table.clear()
         start_time = time.monotonic()
 
         while True:

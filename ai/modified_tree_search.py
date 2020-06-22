@@ -1,9 +1,8 @@
 from copy import deepcopy
 from typing import Dict, Optional, List, Tuple
 
-import tensorflow as tf
 import numpy as np
-
+import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from model.game import Action, MAXIMIZER
@@ -39,7 +38,7 @@ class MCTree:
         self.action_encoder = ActionEncoder()
         self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
         self.state_stack = StateStack()
-        self.tree = {initial_state: self.root}
+        self.graph = {initial_state: self.root}
 
     def traverse(self) -> Tuple[Node, StateStack, List[Edge]]:
         """Search in the tree for the best leaf starting from the root of the tree.
@@ -129,14 +128,15 @@ class MCTree:
     def get_predictions(self, state_stack: StateStack):
         """Calculates the value and the probabilities of possible actions of the state stack head
         :param state_stack:
-        :return: A tuple of value, probabilities, actions key, possible actions, possible states
+        :return: A tuple of value, probabilities, possible actions keys, possible actions, possible states
         """
         # We retrieve the value of the game state and the logits vector from the neural network
         predictions = self.model(state_stack.get_deep_representation_stack().reshape((1,) +
                                                                                      state_stack.get_input_shape()))
 
-        value = predictions[0][0]
-        logits = predictions[1][0]
+        value = float(predictions[0][0])
+        # casting the tensor to a numpy array for the ease of broadcasting
+        logits = np.array(predictions[1][0])
 
         possible_actions, possible_states = state_stack.head.get_all_possible_states()
 
@@ -147,7 +147,7 @@ class MCTree:
         # Mask the illegal actions and remove their logits from the vector
         mask = np.ones_like(logits, dtype=bool)
         mask[actions_cats] = False
-        # We set the value to -100 because we are going to apply softmax to normalize the vector
+        # We set the value to -100 making e^Z[illegal neuron] ~ 0
         logits[mask] = -100
 
         # Applying softmax activation and get the probability vector
@@ -168,16 +168,16 @@ class MCTree:
             value = evaluate(game_state)
             return value if game_state.turn == MAXIMIZER else -value
         else:
-            # We ask the neural network the for the value and portability vector
+            # We ask the neural network the for the value and probability vector
             value, probs, actions_ids, possible_actions, possible_states = self.get_predictions(state_stack)
 
             # expanding phase
             for action, action_id, new_state in zip(possible_actions, actions_ids, possible_states):
                 try:
-                    child = self.tree[new_state]
+                    child = self.graph[new_state]
                 except KeyError:
                     child = Node(new_state)
-                    self.tree[new_state] = child
+                    self.graph[new_state] = child
 
                 edge = Edge(leaf, child, action, action_id, probs[action_id])
 
@@ -190,18 +190,18 @@ class MCTree:
         :param tau: The temperature value
         :return: the probability vector and values vector
         """
-        edges = self.root.edges
+
         pi = np.zeros(self.action_encoder.space_shape)
         values = np.zeros(self.action_encoder.space_shape)
 
-        for edge in edges.values():
+        for edge in self.root.edges.values():
             pi[edge.action_id] = edge.stats['N']
             values[edge.action_id] = edge.stats['Q']
 
         # Search probabilities pi are returned proportional to N^(1/tau)
         pi = np.power(pi, 1 / max(0.01, tau))  # taking maximum to avoid division by zero and to prevent overflow
 
-        # Normalize the vector to represents a probability vector
+        # Normalize the vector to represent a probability vector
         pi = pi / np.sum(pi)
 
         return pi, values
@@ -214,9 +214,6 @@ class MCTree:
             self.expand_and_evaluate(self.root, self.state_stack)
 
         self.root = self.root.edges[action_id].out_node
-
-        for edge in self.root.edges.values():
-            edge.in_node = None
 
     def __getitem__(self, item):
         return self.root.edges[item].action

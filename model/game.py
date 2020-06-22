@@ -3,7 +3,6 @@ from copy import deepcopy
 
 from .piece import *
 
-
 # Constants
 MAXIMIZER = 1
 
