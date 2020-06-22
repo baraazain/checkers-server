@@ -4,6 +4,7 @@ import tensorflow.keras as tk
 
 def softmax_cross_entropy_with_logits(y_true, y_pred):
     """Calculates the loss for the policy head of AlphaZero model
+
     :param y_true:
     :param y_pred:
     :return:
@@ -11,15 +12,15 @@ def softmax_cross_entropy_with_logits(y_true, y_pred):
     p = y_pred
     pi = y_true
 
-    # mask the illegal actions
+    # Mask the illegal actions
     zero = tf.zeros(shape=tf.shape(pi))
     where = tf.equal(pi, zero)
 
-    # remove the logits of illegal actions
+    # Remove the logits of illegal actions
     negatives = tf.fill(tf.shape(pi), -100.0)
     p = tf.where(where, negatives, p)
 
-    # normalize the logits vector to get the probability vector then calculate the loss
+    # Normalize the logits vector to get the probability vector then calculate the loss
     loss = tf.nn.softmax_cross_entropy_with_logits(labels=pi, logits=p)
 
     return loss
@@ -27,6 +28,7 @@ def softmax_cross_entropy_with_logits(y_true, y_pred):
 
 def cnn_block(input_block, filters, kernel_size, regularization_const):
     """Creates the convolution block as defined in AlphaZero paper
+
     :param input_block:
     :param filters:
     :param kernel_size:
@@ -48,6 +50,7 @@ def cnn_block(input_block, filters, kernel_size, regularization_const):
 
 def residual_block(input_block, filters, kernel_size, regularization_const):
     """Creates the residual block as defined in AlphaZero paper
+
     :param input_block:
     :param filters:
     :param kernel_size:
@@ -73,6 +76,7 @@ def residual_block(input_block, filters, kernel_size, regularization_const):
 
 def value_head(input_block, regularization_const):
     """Creates the value head of AlphaZero model as defined in AlphaZero paper
+
     :param input_block:
     :param regularization_const:
     :return:
@@ -105,6 +109,7 @@ def value_head(input_block, regularization_const):
 
 def policy_head(input_block, output_dim, regularization_const):
     """Creates the policy head of AlphaZero model as defined in AlphaZero paper
+
     :param input_block:
     :param output_dim:
     :param regularization_const:
@@ -132,6 +137,7 @@ def policy_head(input_block, output_dim, regularization_const):
 
 def build_alphazero_model(input_dim, output_dim, residual_blocks, filters, regularization_const) -> tk.models.Model:
     """Creates AlphaZero model as defined in AlphaZero paper
+
     :param input_dim:
     :param output_dim:
     :param residual_blocks:

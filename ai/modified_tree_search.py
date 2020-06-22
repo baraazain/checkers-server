@@ -42,6 +42,7 @@ class MCTree:
 
     def traverse(self) -> Tuple[Node, StateStack, List[Edge]]:
         """Search in the tree for the best leaf starting from the root of the tree.
+
         :return: The best leaf node along with game states history and the path list
         """
 
@@ -127,6 +128,7 @@ class MCTree:
 
     def get_predictions(self, state_stack: StateStack):
         """Calculates the value and the probabilities of possible actions of the state stack head
+
         :param state_stack:
         :return: A tuple of value, probabilities, possible actions keys, possible actions, possible states
         """
@@ -187,6 +189,7 @@ class MCTree:
 
     def get_AV(self, tau):
         """Calculates the action value pairs
+
         :param tau: The temperature value
         :return: the probability vector and values vector
         """

@@ -74,6 +74,10 @@ class MonteCarloAgent(Agent):
 
 
 class MiniMaxAgent(Agent):
+    """A player that uses Alpha-Beta search algorithm to take actions.
+
+    """
+
     def __init__(self, pov: int, initial_depth: int = 5, timeout: int = 8):
         super().__init__(None, "Max", None)
         self.abs: Optional[AlphaBetaSearch] = None
