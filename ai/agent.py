@@ -1,14 +1,13 @@
 """The agent module carry out the implementation of AI players.
 
 """
+import random
+import time
 from abc import ABC
 from copy import deepcopy
 
-import random
-import time
-
-import tensorflow.keras as tk
 import numpy as np
+import tensorflow.keras as tk
 
 import ai.modified_tree_search as mts
 import ai.standard_tree_search as sts
@@ -47,7 +46,7 @@ class MonteCarloAgent(Agent):
         self.mct = None
     
     def on_start(self, game: gm.Game):
-        self.mct = sts.MCTree(GameState(game))
+        self.mct = sts.MCTree(GameState(deepcopy(game)))
     
     def on_update(self, action):
         self.mct.update_root(action)
@@ -120,7 +119,7 @@ class AlphaZero(Agent):
         self.mct.update_root(action)
     
     def on_start(self, game):
-        self.mct = mts.MCTree(GameState(game), load_best_model())
+        self.mct = mts.MCTree(GameState(deepcopy(game)), load_best_model())
     
     def act(self, game):
         pass

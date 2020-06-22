@@ -1,3 +1,7 @@
+from ai.agent import MonteCarloAgent
+from model.international_game import InternationalGame
+
+
 # def simulate(mct):
 #     for _ in range(200):
 #         mct.simulate()
@@ -21,8 +25,8 @@ def main():
     #         tree_error = tree_e
     #     print(f'slept for {time.monotonic() - start_time}')
 
-    # game = InternationalGame(1, DummyAgent(), DummyAgent(), None)
-    # game.init()
+    game = InternationalGame(1, MonteCarloAgent(0.3), MonteCarloAgent(0.7), None)
+    game.init()
     # from ai.alpha_beta_search import AlphaBetaSearch
     # from ai.utils import GameState
     # search = AlphaBetaSearch(GameState(game))
@@ -31,14 +35,21 @@ def main():
     # print(len(search.tree))
     #
     # print(len(search.transposition_table))
+    game.player1.on_start(game)
+    game.player2.on_start(game)
+    while not game.end():
+        action = game.get_current_player().act(game)
 
-    # while not game.end():
-    #     action = game.get_current_player().act(game)
-    #     while not game.is_legal_action(action):
-    #         action = game.get_current_player().act(game)
-    #     game.apply_action(action)
-    #     print(game.grid)
-    # game.print_the_winner()
+        while not game.is_legal_action(action):
+            action = game.get_current_player().act(game)
+        game.apply_action(action)
+
+        game.player1.on_update(action)
+        game.player2.on_update(action)
+
+        print(game.grid)
+    game.print_the_winner()
+
     #
     # game = InternationalGame(1, None, None, None)
     # game.init()

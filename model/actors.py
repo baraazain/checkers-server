@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from random import randrange
 
 from .game import Action
 
@@ -16,7 +15,7 @@ class Player(ABC):
     @abstractmethod
     def act(self, game) -> Action:
         pass
-    
+
     def __eq__(self, other):
         if isinstance(other, Player):
             if other is self:
@@ -24,6 +23,12 @@ class Player(ABC):
             if self.id == other.id:
                 return True
         return False
+
+    def on_update(self, action):
+        pass
+
+    def on_start(self, game):
+        pass
 
 
 class Human(Player, ABC):

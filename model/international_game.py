@@ -639,10 +639,10 @@ class InternationalGame(Game):
         # if a pawn reaches the end, it'll promoted to king
         if dst.get_color() == Color.WHITE and dst.r == 0:
             dst.set_type(Type.KING)
-            action.capture.promote = True
+            action.promote = True
         if dst.get_color() == Color.BLACK and dst.r == 9:
             dst.set_type(Type.KING)
-            action.capture.promote = True
+            action.promote = True
         if action.capture is not None and self.can_capture(self.grid[dstR][dstC].piece):
             return
         self.current_turn = 3 - self.current_turn
