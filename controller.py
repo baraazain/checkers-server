@@ -1,7 +1,3 @@
-from ai.agent import MonteCarloAgent
-from model.international_game import InternationalGame
-
-
 # def simulate(mct):
 #     for _ in range(200):
 #         mct.simulate()
@@ -10,7 +6,6 @@ from model.international_game import InternationalGame
 
 def main():
     print('Hello, World')
-
     # tree_error = None
     # reject_error = None
     # with tf.device('/device:GPU:0'):
@@ -25,30 +20,32 @@ def main():
     #         tree_error = tree_e
     #     print(f'slept for {time.monotonic() - start_time}')
 
-    game = InternationalGame(1, MonteCarloAgent(0.3), MonteCarloAgent(0.7), None)
-    game.init()
+    # game = InternationalGame(1, MonteCarloAgent(0.3), MonteCarloAgent(0.7), None)
+    # game = InternationalGame(1, MiniMaxAgent(1, 3, 1), MiniMaxAgent(2, 3, 1), None)
+    # game.init()
+    #
+    # game.player1.on_start(game)
+    # game.player2.on_start(game)
+    # while not game.end():
+    #     action = game.get_current_player().act(game)
+    #
+    #     while not game.is_legal_action(action):
+    #         action = game.get_current_player().act(game)
+    #     game.apply_action(action)
+    #
+    #     game.player1.on_update(action)
+    #     game.player2.on_update(action)
+    #
+    #     print(game.grid)
+    # game.print_the_winner()
+
     # from ai.alpha_beta_search import AlphaBetaSearch
     # from ai.utils import GameState
     # search = AlphaBetaSearch(GameState(game))
     # search.get_best_action()
     #
     # print(len(search.tree))
-    #
     # print(len(search.transposition_table))
-    game.player1.on_start(game)
-    game.player2.on_start(game)
-    while not game.end():
-        action = game.get_current_player().act(game)
-
-        while not game.is_legal_action(action):
-            action = game.get_current_player().act(game)
-        game.apply_action(action)
-
-        game.player1.on_update(action)
-        game.player2.on_update(action)
-
-        print(game.grid)
-    game.print_the_winner()
 
     #
     # game = InternationalGame(1, None, None, None)
