@@ -3,6 +3,7 @@ import json
 
 from .grid import Grid, Cell
 from .piece import Piece
+from server_handler.ResponseResult import Result
 from .actors import Player
 
 

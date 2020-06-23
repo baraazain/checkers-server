@@ -1,8 +1,5 @@
 import datetime
-
-from copy import deepcopy
 from .game import Mode
-from .actors import Player
 from .international_game import *
 
 
@@ -62,9 +59,8 @@ class Contest:
         self.participants = []
         self.current_game = 0
 
-
     @classmethod
-    def from_dict(cls,dictionary):
+    def from_dict(cls, dictionary):
         dictionary = deepcopy(dictionary)
 
         games = []
@@ -72,16 +68,15 @@ class Contest:
 
         for game in dictionary['games']:
             games.append(Game.from_dict(game))
-       
+
         for participant in dictionary['participants']:
             participants.append(Player.from_dict(participant))
-        
+
         dictionary['participants'] = participants
         dictionary['games'] = games
-        contest = Contest(None,None,None,None)
+        contest = Contest(None, None, None, None)
         contest.__dict__ = dictionary
         return contest
-
 
     def add_new_player(self, player: Player) -> None:
         for constraint in self.constraints:
@@ -96,7 +91,7 @@ class Contest:
             minimizer = self.participants[i]
 
             coming_date = self.date
-            self.date += datetime.timedelta(days=i - 1)
+            coming_date += datetime.timedelta(days=i - 1)
 
             if self.mode == Mode.INTERNATIONAL:
                 self.games.append(InternationalGame(self.last_game_id + 1, maximizer, minimizer, coming_date))
@@ -128,7 +123,7 @@ class Contest:
         while not self.is_round_end():
             game = self.games[self.current_game]
             self.current_game += 1
-            # control the game
+            game.start_game(self)
         self.participants = self.get_qualified_players()
         self.mange()
 

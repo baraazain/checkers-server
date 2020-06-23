@@ -17,18 +17,5 @@ def main():
         print(game.grid)
     game.print_the_winner()
 
-import json
-
-import model.utils as utils
-
 if __name__ == '__main__':
-    #main()
-    #print(dt.datetime(year=2006, month=12, day=1, hour=12, minute=0, second=0,tzinfo = tzinfor))
-    #game = InternationalGame(1, RandomAgent(), RandomAgent(), dt.datetime.now())
-    # game.init()
-    #  dic = json.loads(utils.to_json(game))
-    # print(RandomAgent.from_dict(dic['player1']))
-    player =RandomAgent()
-    print(utils.to_json(player))
-    p=RandomAgent().from_dict(json.loads(utils.to_json(player)))
-    print(p)
+    main()

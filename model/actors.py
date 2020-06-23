@@ -7,12 +7,14 @@ from .game import Action
 
 class Player(ABC):
 
-    def __init__(self, _id, name, password, rate=1600, current_contests= []):
+    def __init__(self, _id, name, password, rate=1600, current_contests=[], finish_contest=[], games_id_saved=[]):
         self.id = _id
         self.name = name
         self.password = password
         self.rate = rate
         self.current_contests = current_contests
+        self.finish_contest=finish_contest
+        self.games_id_saved=games_id_saved
 
     @abstractmethod
     def act(self, game) -> Action:
@@ -22,11 +24,11 @@ class Player(ABC):
     @classmethod
     def from_dict(cls, dictionary):
         dictionary=deepcopy(dictionary)
-        contests = []
-        for contest in dictionary['current_contests']:
-          contests.append(md.contest.Contest.from_dict(contest))
+       # contests = []
+       # for contest in dictionary['current_contests']:
+        #  contests.append(md.contest.Contest.from_dict(contest))
 
-        dictionary['current_contests'] = contests
+     #   dictionary['current_contests'] = contests
         p = cls(None, None, None)
         p.__dict__ = dictionary
         return p
@@ -42,6 +44,11 @@ class Player(ABC):
 
 class Human(Player, ABC):
     pass
+
+class RemotePlayer(Human):
+    def __init__(self,sid=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sid=sid
 
 
 class ConsolePlayer(Human):
