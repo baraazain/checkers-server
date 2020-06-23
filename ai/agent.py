@@ -10,8 +10,8 @@ import time
 import tensorflow.keras as tk
 import numpy as np
 
-import ai.modified_tree_search as mts
-import ai.standard_tree_search as sts
+# import ai.modified_tree_search as mts
+# import ai.standard_tree_search as sts
 import model.game as gm
 from model.actors import Agent
 from .utils import GameState, load_best_model
@@ -26,8 +26,8 @@ class DummyAgent(Agent):
         super().__init__(0, "Dummy", None)
 
     def act(self, game):
-        actions = game.get_all_possible_actions()
-        return actions[random.randrange(0, len(actions))]
+        paths = game.get_all_possible_actions()
+        return paths[random.randrange(0, len(paths))]
 
     def on_start(self, game):
         pass

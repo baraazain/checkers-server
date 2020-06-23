@@ -1,10 +1,10 @@
 from copy import deepcopy
 from typing import Dict, Optional, List, Tuple
 
-import tensorflow as tf
-import numpy as np
-
-from tensorflow.keras.models import Model
+# import tensorflow as tf
+# import numpy as np
+#
+# from tensorflow.keras.models import Model
 
 from model.game import Action, MAXIMIZER
 from .config import EPSILON, ALPHA, CPUCT

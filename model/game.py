@@ -59,6 +59,7 @@ class Game(ABC):
         self.current_turn = 1
         self.paths = []
         self.path = []
+        self.mx = 0
 
     @abstractmethod
     def init(self):
@@ -77,7 +78,7 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def get_maximum_captures(self, piece, player):
+    def get_maximum_captures(self, piece, player, turn):
         pass
 
     @abstractmethod
@@ -101,7 +102,7 @@ class Game(ABC):
         actions = self.get_all_possible_actions()
         for action in actions:
             new_state = deepcopy(self)
-            new_state.apply_action(action)
+            new_state.apply_turn(action)
             states.append(new_state)
         return actions, states
 
@@ -124,6 +125,11 @@ class Game(ABC):
     @abstractmethod
     def is_legal_action(self, action):
         pass
+
+    def apply_turn(self, actions: list):
+        for action in actions:
+            self.apply_action(action)
+        self.current_turn = 3 - self.current_turn
 
     @abstractmethod
     def apply_action(self, action):

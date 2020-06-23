@@ -1,8 +1,8 @@
-import multiprocessing as mp
+# import multiprocessing as mp
 import time
 
-import ai.parallel_tree_search as pts
-import ai.utils as uty
+# import ai.parallel_tree_search as pts
+# import ai.utils as uty
 from model.international_game import InternationalGame
 import random
 import copy
@@ -25,8 +25,14 @@ from model.international_game import InternationalGame
 
 def main():
     print('Hello, World')
-    # game = InternationalGame(1, DummyAgent(), DummyAgent(), None)
-    # game.init()
+    game = InternationalGame(1, DummyAgent(), DummyAgent(), None)
+    game.init()
+
+    game = InternationalGame.read()
+    game.player1 = DummyAgent()
+    game.player2 = DummyAgent()
+    game.current_turn = 2
+
     # from ai.alpha_beta_search import AlphaBetaSearch
     # from ai.utils import GameState
     # search = AlphaBetaSearch(GameState(game))
@@ -36,13 +42,21 @@ def main():
     #
     # print(len(search.transposition_table))
 
-    # while not game.end():
-    #     action = game.get_current_player().act(game)
-    #     while not game.is_legal_action(action):
-    #         action = game.get_current_player().act(game)
-    #     game.apply_action(action)
-    #     print(game.grid)
-    # game.print_the_winner()
+    print(game.grid)
+    while not game.end():
+        path = game.get_current_player().act(game)
+
+        # print("HEREEE:", path)
+        # for action in path:
+        #     print(action)
+
+        # while not game.is_legal_path(path):
+        #     print("REJECTED")
+        #     path = game.get_current_player().act(game)
+
+        game.apply_turn(path)
+        print(game.grid)
+    game.print_the_winner()
     #
     # game = InternationalGame(1, None, None, None)
     # game.init()

@@ -77,7 +77,7 @@ class Contest:
             minimizer = self.participants[i]
 
             coming_date = self.date
-            self.date += datetime.timedelta(days=i - 1)
+            coming_date += datetime.timedelta(days=i - 1)
 
             if self.mode == Mode.INTERNATIONAL:
                 self.games.append(InternationalGame(self.last_game_id + 1, maximizer, minimizer, coming_date))
@@ -108,6 +108,7 @@ class Contest:
         self.current_game = 0
         while not self.is_round_end():
             game = self.games[self.current_game]
+            game.start_game()
             self.current_game += 1
             # control the game
         self.participants = self.get_qualified_players()
