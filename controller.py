@@ -13,7 +13,7 @@ import pickle
 import numpy as np
 import random
 
-from ai.agent import DummyAgent, MiniMaxAgent
+from ai.agent import DummyAgent, MiniMaxAgent, MonteCarloAgent
 from model.international_game import InternationalGame
 
 
@@ -24,7 +24,8 @@ from model.international_game import InternationalGame
 
 def main():
     print('Hello, World')
-
+    # s = ''
+    # print(s.join(['fuck', ' ababa']))
     # tree_error = None
     # reject_error = None
     # with tf.device('/device:GPU:0'):
@@ -39,11 +40,16 @@ def main():
     #         tree_error = tree_e
     #     print(f'slept for {time.monotonic() - start_time}')
 
-    game = InternationalGame(1, MiniMaxAgent(pov=1, initial_depth=3, timeout=2),
+    # game = InternationalGame(1, MiniMaxAgent(pov=1, initial_depth=3, timeout=2),
+    #                          MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
+
+    game = InternationalGame(1, MonteCarloAgent(simulations_limit=0.5),
                              MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
+
     game.init()
     game.player1.on_start(game)
     game.player2.on_start(game)
+
     # game = InternationalGame.read()
     # game.player1 = DummyAgent()
     # game.player2 = DummyAgent()

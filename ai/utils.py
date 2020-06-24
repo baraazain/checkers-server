@@ -161,6 +161,10 @@ class GameState:
         return hash(hashable)
 
 
+class MonteCarloGameState(GameState):
+    pass
+
+
 class StateStack:
     """A stack for saving playing history
     """

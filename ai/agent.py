@@ -59,18 +59,20 @@ class MonteCarloAgent(Agent):
         while time.monotonic() - start_time < self.simulations_limit:
             self.mct.simulate()
 
-        actions, values = self.mct.get_AV()
+        paths, values = self.mct.get_AV()
 
         mx_val = -1e9
-        best_action = None
+        best_path = None
 
-        for action, value in zip(actions, values):
+        for action, value in zip(paths, values):
             if value > mx_val:
-                best_action = action
+                best_path = action
                 mx_val = value
 
-        best_action.player = self
-        return best_action
+        for action in best_path:
+            action.player = self
+
+        return best_path
 
 
 class MiniMaxAgent(Agent):
@@ -100,6 +102,7 @@ class MiniMaxAgent(Agent):
         self.abs.update_root(action)
 
 
+# TODO: needs to be re-implemented after merging the fixed bugs in game logic
 class AlphaZero(Agent):
     """A player that uses reinforcement learning and neural networks to take actions.
 

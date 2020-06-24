@@ -208,15 +208,10 @@ class AlphaBetaSearch:
         if not self.root.edges:
             self.expand(self.root)
 
-        t = ''
-
-        for action in path:
-            t += str(action)
+        t = ''.join(list(map(str, path)))
 
         for edge in self.root.edges:
-            s = ''
-            for action in edge.action:
-                s += str(action)
+            s = ''.join(list(map(str, edge.action)))
 
             if s == t:
                 self.root = edge.out_node

@@ -5,7 +5,7 @@ from math import sqrt, log
 from typing import Optional, List, Tuple
 
 from model.game import Action, Game, MAXIMIZER
-from .utils import GameState, evaluate, to_label, ActionEncoder, get_action_space
+from .utils import GameState, evaluate
 
 
 class Node:
@@ -14,19 +14,18 @@ class Node:
 
     def __init__(self, game_state: GameState):
         self.game_state = game_state
-        self.edges = {}
+        self.edges = []
 
 
 class Edge:
     """Monte Carlo tree edge.
     """
 
-    def __init__(self, in_node: Node, out_node: Optional[Node], action: Action, action_id: int):
+    def __init__(self, in_node: Node, out_node: Optional[Node], action: List[Action]):
         self.in_node = in_node
         self.out_node = out_node
         self.stats = {'W': 0, 'N': 0}
         self.action = action
-        self.action_id = action_id
 
 
 class MCTree:
@@ -35,8 +34,6 @@ class MCTree:
 
     def __init__(self, initial_state: GameState):
         self.root = Node(initial_state)
-        self.action_encoder = ActionEncoder()
-        self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
         self.graph = {initial_state: self.root}
 
     @staticmethod
@@ -54,12 +51,12 @@ class MCTree:
 
             # Calculates the children visits sum to get current node visits.
             nb = 0
-            for edge in current_node.edges.values():
+            for edge in current_node.edges:
                 nb += edge.stats['N']
 
             simulation_edge = None
 
-            for edge in current_node.edges.values():
+            for edge in current_node.edges:
                 if edge.stats['N'] == 0:
                     # If we have never visited this child then the uct is going to be infinite.
                     simulation_edge = edge
@@ -113,11 +110,8 @@ class MCTree:
         :return:
         """
         possible_actions, possible_states = leaf.game_state.get_all_possible_states()
-        # Get actions unique keys
-        actions_labels = list(map(to_label, possible_actions))
-        actions_ids = self.action_encoder.transform(actions_labels)
 
-        for action, action_id, new_state in zip(possible_actions, actions_ids, possible_states):
+        for path, new_state in zip(possible_actions, possible_states):
             # Check if the new state is already in the graph dictionary
             try:
                 child = self.graph[new_state]
@@ -125,7 +119,7 @@ class MCTree:
                 child = Node(new_state)
                 self.graph[new_state] = child
 
-            leaf.edges[action_id] = Edge(leaf, child, action, action_id)
+            leaf.edges.append(Edge(leaf, child, path))
 
     @staticmethod
     def rollout(node: Node):
@@ -138,9 +132,9 @@ class MCTree:
         game: Game = node.game_state.get_game()
 
         while not game.end():
-            actions = game.get_all_possible_actions()
-            action = random.choice(actions)
-            game.apply_action(action)
+            paths = game.get_all_possible_actions()
+            path = random.choice(paths)
+            game.apply_turn(path)
 
         value = evaluate(game)
 
@@ -167,22 +161,28 @@ class MCTree:
     def get_AV(self) -> Tuple[List[Action], List[float]]:
         """Calculates the action value pairs.
 
-        :return: A tuple of actions and their respective rewards mean
+        :return: A tuple of actions and their respective visits
         """
 
         edges = self.root.edges
         actions = []
         values = []
 
-        for edge in edges.values():
+        for edge in edges:
             actions.append(edge.action)
             values.append(edge.stats['N'])
 
         return actions, values
 
-    def update_root(self, action: Action):
-        action_id = self.action_encoder.transform([to_label(action)])[0]
+    def update_root(self, path: List[Action]):
         if not self.root.edges:
             self.expand(self.root)
 
-        self.root = self.root.edges[action_id].out_node
+        t = ''.join(list(map(str, path)))
+
+        for edge in self.root.edges:
+            s = ''.join(list(map(str, edge.action)))
+
+            if s == t:
+                self.root = edge.out_node
+                break
