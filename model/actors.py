@@ -40,17 +40,23 @@ class ConsolePlayer(Human):
         super().__init__(_id, name, password)
 
     def act(self, game):
-        actions = game.get_all_possible_actions()
-        size = len(actions)
-        for idx, action in enumerate(actions):
-            print(str(idx + 1) + "." + str(action))
+        paths = game.get_all_possible_actions()
+        size = len(paths)
+
+        for idx, path in enumerate(paths):
+
+            print(''.join([str(idx + 1),
+                           ". ",
+                           ''.join(list(map(str, path)))
+                           ])
+                  )
+
         while True:
             choice = int(input('Enter your choice:'))
             if 0 > choice or size < choice:
                 continue
-            return actions[choice - 1]
+            return paths[choice - 1]
 
 
 class Agent(Player, ABC):
     pass
-

@@ -15,7 +15,7 @@ DATA_LEN = 10000
 
 # Evaluation
 EVAL_EPISODES = 20
-SCORING_THRESHOLD = 55  # winning ratio after which we replace the best version AlphaZero
+SCORING_THRESHOLD = 55  # winning ratio after which we replace the best AlphaZero version
 
 # Training
 REG_CONST = 0.0001  # regularization

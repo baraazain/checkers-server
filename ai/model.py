@@ -17,6 +17,7 @@ def softmax_cross_entropy_with_logits(y_true, y_pred):
     where = tf.equal(pi, zero)
 
     # Remove the logits of illegal actions
+    # We set the value to -100 making e^Z[illegal neuron] ~ 0
     negatives = tf.fill(tf.shape(pi), -100.0)
     p = tf.where(where, negatives, p)
 
@@ -116,7 +117,7 @@ def policy_head(input_block, output_dim, regularization_const):
     :return:
     """
     head = tk.layers.Conv2D(filters=2,
-                            kernel_size=(1, 1),
+                            kernel_size=1,
                             padding='same',
                             activation='linear',
                             kernel_regularizer=tk.regularizers.l2(regularization_const))(input_block)
