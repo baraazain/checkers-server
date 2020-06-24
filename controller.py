@@ -1,65 +1,74 @@
-# import multiprocessing as mp
-import time
-
-# import ai.parallel_tree_search as pts
-# import ai.utils as uty
-from model.actors import ConsolePlayer
-from model.international_game import InternationalGame
-import random
-import copy
-import sys
-
-import pickle
-
-import numpy as np
-import random
+import datetime
+import argparse
 
 from ai.agent import DummyAgent, MiniMaxAgent, MonteCarloAgent
+from model.actors import ConsolePlayer
 from model.international_game import InternationalGame
 
+parser = argparse.ArgumentParser(description='Checkers Server.')
+parser.add_argument('--single', action='store_true')
+parser.add_argument('--level', '-lvl', metavar='level', type=int,
+                    help='define the level of the AI player', default=1)
 
-# def simulate(mct):
-#     for _ in range(200):
-#         mct.simulate()
-#     return mct
+# run like python controller.py --single -lvl 1
+# to play multiple player game run
+# python controller.py
+args = parser.parse_args()
+
 
 def main():
     print('Hello, World')
-    # s = ''
-    # print(s.join(['fuck', ' ababa']))
-    # tree_error = None
-    # reject_error = None
-    # with tf.device('/device:GPU:0'):
-    #     start_time = time.monotonic()
-    #     try:
-    #         train_manger(1)
-    #     except RejectedActionError as reject_e:
-    #         print('rejected')
-    #         reject_error = reject_e
-    #     except TreeError as tree_e:
-    #         print('search error')
-    #         tree_error = tree_e
-    #     print(f'slept for {time.monotonic() - start_time}')
 
-    # game = InternationalGame(1, MiniMaxAgent(pov=1, initial_depth=3, timeout=2),
-    #                          MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
+    game_dict = {
+        'multiple': {
+            1: InternationalGame(1,
+                                 ConsolePlayer(_id=1, name='Mark', password='123'),
+                                 ConsolePlayer(_id=2, name='Jack', password='123'),
+                                 datetime.datetime.now()),
 
-    # game = InternationalGame(1, MonteCarloAgent(simulations_limit=0.5),
-    #                          MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
+        },
 
-    game = InternationalGame(1,
-                             MonteCarloAgent(simulations_limit=0.5),
-                             ConsolePlayer(_id=2, name='Mark', password='123'),
-                             None)
+        'single': {
+            1: InternationalGame(1,
+                                 ConsolePlayer(_id=1, name='Mark', password='123'),
+                                 DummyAgent(),
+                                 datetime.datetime.now()),
+
+            2: InternationalGame(1,
+                                 ConsolePlayer(_id=1, name='Mark', password='123'),
+                                 MonteCarloAgent(simulations_limit=0.5),
+                                 datetime.datetime.now()),
+
+            3: InternationalGame(1,
+                                 ConsolePlayer(_id=1, name='Mark', password='123'),
+                                 MonteCarloAgent(simulations_limit=1),
+                                 datetime.datetime.now()),
+
+            4: InternationalGame(1,
+                                 ConsolePlayer(_id=1, name='Mark', password='123'),
+                                 MonteCarloAgent(simulations_limit=1.5),
+                                 datetime.datetime.now()),
+
+            5: InternationalGame(1,
+                                 ConsolePlayer(_id=1, name='Mark', password='123'),
+                                 MiniMaxAgent(pov=2, initial_depth=3, timeout=2),
+                                 datetime.datetime.now()),
+
+            6: InternationalGame(1,
+                                 ConsolePlayer(_id=1, name='Mark', password='123'),
+                                 MiniMaxAgent(pov=2, initial_depth=3, timeout=3),
+                                 datetime.datetime.now()),
+        },
+    }
+
+    if not args.single:
+        game = game_dict['multiple'][1]
+    else:
+        game = game_dict['single'][args.level]
 
     game.init()
     game.player1.on_start(game)
     game.player2.on_start(game)
-
-    # game = InternationalGame.read()
-    # game.player1 = DummyAgent()
-    # game.player2 = DummyAgent()
-    # game.current_turn = 2
 
     print(game.grid)
     while not game.end():
@@ -70,37 +79,7 @@ def main():
         print(game.grid)
     game.print_the_winner()
 
-    # game = InternationalGame(1, None, None, None)
-    # game.init()
-
-    # mct = pts.ParallelMCTree(uty.GameState(game))
-    # mct1 = pts.ParallelMCTree(uty.GameState(game))
-    # mct2 = pts.ParallelMCTree(uty.GameState(game))
-    # mct3 = pts.ParallelMCTree(uty.GameState(game))
-    #
-    # start_t = time.monotonic()
-    #
-    # with mp.Pool() as p:
-    #     mct, mct1, mct2, mct3 = p.map(simulate, [mct, mct1, mct2, mct3])
-    # mct.dfs(mct.root, mct1.root)
-    # mct.dfs(mct.root, mct2.root)
-    # mct.dfs(mct.root, mct3.root)
-    #
-    # print(time.monotonic() - start_t)
-    #
-    # mct4 = pts.ParallelMCTree(uty.GameState(game))
-    #
-    # start_t = time.monotonic()
-    #
-    # for _ in range(200):
-    #     #start_t1 = time.monotonic()
-    #     mct4.simulate()
-    #     #print(time.monotonic() - start_t1)
-    #
-    # print(time.monotonic() - start_t)
-    #
-    # print(len(mct.tree))
-
 
 if __name__ == '__main__':
+    print(args)
     main()
