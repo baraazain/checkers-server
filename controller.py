@@ -33,6 +33,7 @@ def main():
     game.player2 = DummyAgent()
     game.current_turn = 2
 
+
     # from ai.alpha_beta_search import AlphaBetaSearch
     # from ai.utils import GameState
     # search = AlphaBetaSearch(GameState(game))
@@ -45,19 +46,11 @@ def main():
     print(game.grid)
     while not game.end():
         path = game.get_current_player().act(game)
-
-        # print("HEREEE:", path)
-        # for action in path:
-        #     print(action)
-
-        # while not game.is_legal_path(path):
-        #     print("REJECTED")
-        #     path = game.get_current_player().act(game)
-
         game.apply_turn(path)
         print(game.grid)
+        break
     game.print_the_winner()
-    #
+
     # game = InternationalGame(1, None, None, None)
     # game.init()
 

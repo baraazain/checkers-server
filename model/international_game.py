@@ -183,12 +183,12 @@ class InternationalGame(Game):
             return False
         if abs(src_r - dst_r) != 2 or abs(src_c - dst_c) != 2:
             return False
-        middleR = (src_r + dst_r) // 2
-        middleC = (src_c + dst_c) // 2
-        middleCell = self.grid[middleR][middleC]
-        if middleCell.piece is None:
+        middle_r = (src_r + dst_r) // 2
+        middle_c = (src_c + dst_c) // 2
+        middle_cell = self.grid[middle_r][middle_c]
+        if middle_cell.piece is None:
             return False
-        if middleCell.get_color() == src.get_color():
+        if middle_cell.get_color() == src.get_color():
             return False
         return True
 
@@ -475,7 +475,7 @@ class InternationalGame(Game):
 
         return self.mx, self.paths
 
-    # @return all possible eats from cur_rent states
+    # @return all possible eats from current states
     def get_all_possible_captures(self):
         actions_value_pairs = []
         if self.current_turn == 1:
@@ -505,11 +505,6 @@ class InternationalGame(Game):
             if value == mx:
                 captures.extend(path)
 
-        # for path in captures:
-        #     print("PPPPAAAATHTTHTHTH: ")
-        #     for action in path:
-        #         print("ACTIONNNNNNN: ", action)
-
         return captures
 
     """      
@@ -525,23 +520,10 @@ class InternationalGame(Game):
         src: Cell = action.src
         dst: Cell = action.dst
 
-
-        # print("src: ", src, dst);
-
-        # we remove the src piece and add the dst piece
-        # remove the src piece
-        # self.removePiece(src.piece)
         """
         No need to remove then add piece as we have the reference to the piece
         changes will apply in the list -_-
         """
-
-        # move the piece from src to dst and empty src
-
-        # print("PIECE: ", dst)
-
-        # add the dst piece
-        # self.addPiece(dst.piece)
 
         # the direction that src has to move to reach dst.
         dir_r = (dst_r - src_r) // abs(dst_r - src_r)
@@ -560,8 +542,6 @@ class InternationalGame(Game):
             if cur.piece is not None:
                 action.capture = cur.piece
                 cur.piece.dead = True
-                # print("cur_r: ", cur_r+1, cur_c+1);
-                # self.removePiece(cur.piece)
                 cur.piece = None
                 break
             cur_r += dir_r
@@ -570,14 +550,6 @@ class InternationalGame(Game):
         src.piece.cell = dst
         dst.piece = src.piece
         src.piece = None
-
-        # print(self.grid)
-
-        if action.capture is not None and self.can_capture(self.grid[dst.r][dst.c].piece):
-            return
-        # self.current_turn = 3 - self.current_turn
-        # self.actions.append(action)
-
     """     
         @param move the move needs to implement
         @return if the given move can be implemented or not
@@ -597,12 +569,12 @@ class InternationalGame(Game):
             return False
         if self.current_turn == 2 and self.grid[r][c].get_color() != Color.BLACK:
             return False
-        action = self._validateAction(action)
+        action = self._validate_action(action)
         if self.correct_eat(action) or self.correct_walk(action):
             return True
         return False
 
-    def _validateAction(self, action):
+    def _validate_action(self, action):
         src: Cell = action.src
         dst: Cell = action.dst
         src: Cell = self.grid[src.r][src.c]
@@ -617,7 +589,7 @@ class InternationalGame(Game):
 
     def apply_action(self, action: Action):
         # we store the copy move in the moves list not the given move
-        action = self._validateAction(action)
+        action = self._validate_action(action)
         self.actions.append(action)
         src: Cell = action.src
         dst: Cell = action.dst
@@ -637,9 +609,9 @@ class InternationalGame(Game):
             middle cell will be either the src cell or dst cell, in case of EAT 
             the middle cell will be the eaten cell
         """
-        middleR = (src_r + dst_r) // 2
-        middleC = (src_c + dst_c) // 2
-        middle: Cell = self.grid[middleR][middleC]
+        middle_r = (src_r + dst_r) // 2
+        middle_c = (src_c + dst_c) // 2
+        middle: Cell = self.grid[middle_r][middle_c]
         # in case of EAT
         if middle != dst and middle != src and middle.piece is not None:
             #            copyAction.eat = deepcopy(middle.piece)
@@ -660,9 +632,6 @@ class InternationalGame(Game):
         if dst.get_color() == Color.BLACK and dst.r == 9:
             dst.set_type(Type.KING)
             action.promote = True
-        if action.capture is not None and self.can_capture(self.grid[dst_r][dst_c].piece):
-            return
-        # self.current_turn = 3 - self.current_turn
 
     # undo the last move
     def undo(self):
