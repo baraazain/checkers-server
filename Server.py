@@ -1,5 +1,5 @@
-from aiohttp import web
 import socketio
+from aiohttp import web
 
 # creates a new Async Socket IO Server
 sio = socketio.AsyncServer()
@@ -29,9 +29,13 @@ async def print_message(sid, message):
     print(message)
 
 
+player = []
+
+
 @sio.event
 async def connect(sid, environ):
     print('connect ', sid)
+    player.append(sid)
 
 
 @sio.event

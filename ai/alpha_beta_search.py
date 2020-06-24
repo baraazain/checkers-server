@@ -18,7 +18,7 @@ class Node:
 class Edge:
     """Search tree edge.
     """
-    def __init__(self, in_node: Node, out_node: Optional[Node], action: Action):
+    def __init__(self, in_node: Node, out_node: Optional[Node], action: List[Action]):
         self.out_node = out_node
         self.in_node = in_node
         self.action = action
@@ -117,29 +117,20 @@ class AlphaBetaSearch:
         best_action = node.edges[0].action
 
         for edge in node.edges:
-            if edge.out_node.game_state.turn == 1:
-                evaluation, _ = self.max(edge.out_node, depth - 1, start_time, alpha, beta)
+            evaluation, _ = self.max(edge.out_node, depth - 1, start_time, alpha, beta)
 
-                if self.timeout_flag:
-                    node.edges.sort(key=self._cmp_edges)
-                    return None, None
+            if self.timeout_flag:
+                node.edges.sort(key=self._cmp_edges)
+                return None, None
 
-                if evaluation < beta:
-                    beta = evaluation
-                    best_action = edge.action
+            if evaluation < beta:
+                beta = evaluation
+                best_action = edge.action
 
-                if alpha >= beta:
-                    self.memo(node, alpha, None)
-                    node.edges.sort(key=self._cmp_edges)
-                    return alpha, None
-            else:
-                evaluation, _ = self.min(edge.out_node, depth, start_time, alpha, beta)
-
-                if self.timeout_flag:
-                    return None, None
-
-                self.memo(node, evaluation, edge.action)
-                return evaluation, edge.action
+            if alpha >= beta:
+                self.memo(node, alpha, None)
+                node.edges.sort(key=self._cmp_edges)
+                return alpha, None
 
         self.memo(node, beta, best_action)
         node.edges.sort(key=self._cmp_edges)
@@ -169,35 +160,26 @@ class AlphaBetaSearch:
         best_action = node.edges[0].action
 
         for edge in node.edges:
-            if edge.out_node.game_state.turn == 2:
-                evaluation, _ = self.min(edge.out_node, depth - 1, start_time, alpha, beta)
+            evaluation, _ = self.min(edge.out_node, depth - 1, start_time, alpha, beta)
 
-                if self.timeout_flag:
-                    node.edges.sort(key=self._cmp_edges, reverse=True)
-                    return None, None
+            if self.timeout_flag:
+                node.edges.sort(key=self._cmp_edges, reverse=True)
+                return None, None
 
-                if evaluation > alpha:
-                    alpha = evaluation
-                    best_action = edge.action
+            if evaluation > alpha:
+                alpha = evaluation
+                best_action = edge.action
 
-                if alpha >= beta:
-                    self.memo(node, beta, None)
-                    node.edges.sort(key=self._cmp_edges, reverse=True)
-                    return beta, None
-            else:
-                evaluation, _ = self.max(edge.out_node, depth, start_time, alpha, beta)
-
-                if self.timeout_flag:
-                    return None, None
-
-                self.memo(node, evaluation, edge.action)
-                return evaluation, edge.action
+            if alpha >= beta:
+                self.memo(node, beta, None)
+                node.edges.sort(key=self._cmp_edges, reverse=True)
+                return beta, None
 
         self.memo(node, alpha, best_action)
         node.edges.sort(key=self._cmp_edges, reverse=True)
         return alpha, best_action
 
-    def get_best_action(self) -> Action:
+    def get_best_action(self) -> List[Action]:
         i = 0
         ret_action = None
         self.timeout_flag = False
@@ -222,12 +204,21 @@ class AlphaBetaSearch:
 
         return ret_action
 
-    def update_root(self, action):
+    def update_root(self, path):
         if not self.root.edges:
             self.expand(self.root)
 
+        t = ''
+
+        for action in path:
+            t += str(action)
+
         for edge in self.root.edges:
-            if str(edge.action) == str(action):
+            s = ''
+            for action in edge.action:
+                s += str(action)
+
+            if s == t:
                 self.root = edge.out_node
                 break
 

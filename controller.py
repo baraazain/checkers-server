@@ -13,7 +13,7 @@ import pickle
 import numpy as np
 import random
 
-from ai.agent import DummyAgent
+from ai.agent import DummyAgent, MiniMaxAgent
 from model.international_game import InternationalGame
 
 
@@ -22,33 +22,40 @@ from model.international_game import InternationalGame
 #         mct.simulate()
 #     return mct
 
-
 def main():
     print('Hello, World')
-    game = InternationalGame(1, DummyAgent(), DummyAgent(), None)
+
+    # tree_error = None
+    # reject_error = None
+    # with tf.device('/device:GPU:0'):
+    #     start_time = time.monotonic()
+    #     try:
+    #         train_manger(1)
+    #     except RejectedActionError as reject_e:
+    #         print('rejected')
+    #         reject_error = reject_e
+    #     except TreeError as tree_e:
+    #         print('search error')
+    #         tree_error = tree_e
+    #     print(f'slept for {time.monotonic() - start_time}')
+
+    game = InternationalGame(1, MiniMaxAgent(pov=1, initial_depth=3, timeout=2),
+                             MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
     game.init()
-
-    game = InternationalGame.read()
-    game.player1 = DummyAgent()
-    game.player2 = DummyAgent()
-    game.current_turn = 2
-
-
-    # from ai.alpha_beta_search import AlphaBetaSearch
-    # from ai.utils import GameState
-    # search = AlphaBetaSearch(GameState(game))
-    # search.get_best_action()
-    #
-    # print(len(search.tree))
-    #
-    # print(len(search.transposition_table))
+    game.player1.on_start(game)
+    game.player2.on_start(game)
+    # game = InternationalGame.read()
+    # game.player1 = DummyAgent()
+    # game.player2 = DummyAgent()
+    # game.current_turn = 2
 
     print(game.grid)
     while not game.end():
         path = game.get_current_player().act(game)
         game.apply_turn(path)
+        game.player1.on_update(path)
+        game.player2.on_update(path)
         print(game.grid)
-        break
     game.print_the_winner()
 
     # game = InternationalGame(1, None, None, None)

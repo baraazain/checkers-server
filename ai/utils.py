@@ -2,6 +2,7 @@
 """
 import pickle
 from collections import deque
+from copy import deepcopy
 
 import numpy as np
 import tensorflow.keras as tk
@@ -127,9 +128,11 @@ class GameState:
         self.game_class = game.__class__
 
     def get_all_possible_states(self):
-        actions, states = self.game_class.build(self.white_pieces, self.black_pieces,
-                                                self.turn).get_all_possible_states()
+        actions, states = self.game_class.build(self.white_pieces,
+                                                self.black_pieces, self.turn).get_all_possible_states()
+
         ret = [GameState(state) for state in states]
+
         return actions, ret
 
     def get_game(self):
@@ -211,6 +214,7 @@ class StateStack:
 class ActionEncoder(LabelEncoder):
     """A utility to transform the action labels to unique integers and vice versa
     """
+
     def __init__(self):
         super().__init__()
         self.space_shape = 0

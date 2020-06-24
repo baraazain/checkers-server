@@ -4,7 +4,7 @@
 import random
 import time
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import tensorflow.keras as tk
@@ -85,10 +85,13 @@ class MiniMaxAgent(Agent):
         self.timeout = timeout
         self.initial_depth = initial_depth
 
-    def act(self, game) -> Action:
-        action = self.abs.get_best_action()
-        action.player = self
-        return action
+    def act(self, game) -> List[Action]:
+        path = self.abs.get_best_action()
+
+        for action in path:
+            action.player = self
+
+        return path
 
     def on_start(self, game):
         self.abs = AlphaBetaSearch(GameState(deepcopy(game)), self.pov, self.initial_depth, self.timeout)

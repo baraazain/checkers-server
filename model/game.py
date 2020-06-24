@@ -96,15 +96,14 @@ class Game(ABC):
     def get_all_possible_actions(self):
         pass
 
-    # Need implementation
     def get_all_possible_states(self):
         states = []
-        actions = self.get_all_possible_actions()
-        for action in actions:
+        paths = self.get_all_possible_actions()
+        for path in paths:
             new_state = deepcopy(self)
-            new_state.apply_turn(action)
+            new_state.apply_turn(path)
             states.append(new_state)
-        return actions, states
+        return paths, states
 
     @abstractmethod
     def correct_king_eat(self, action):
