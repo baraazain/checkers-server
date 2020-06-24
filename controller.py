@@ -3,6 +3,7 @@ import time
 
 # import ai.parallel_tree_search as pts
 # import ai.utils as uty
+from model.actors import ConsolePlayer
 from model.international_game import InternationalGame
 import random
 import copy
@@ -43,8 +44,13 @@ def main():
     # game = InternationalGame(1, MiniMaxAgent(pov=1, initial_depth=3, timeout=2),
     #                          MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
 
-    game = InternationalGame(1, MonteCarloAgent(simulations_limit=0.5),
-                             MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
+    # game = InternationalGame(1, MonteCarloAgent(simulations_limit=0.5),
+    #                          MiniMaxAgent(pov=2, initial_depth=3, timeout=2), None)
+
+    game = InternationalGame(1,
+                             MonteCarloAgent(simulations_limit=0.5),
+                             ConsolePlayer(_id=2, name='Mark', password='123'),
+                             None)
 
     game.init()
     game.player1.on_start(game)

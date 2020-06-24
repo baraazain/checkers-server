@@ -45,6 +45,7 @@ def play_match(agent: AlphaZero,
                model: tk.models.Model,
                other_agent: Optional[AlphaZero] = None,
                other_model: Optional[tk.models.Model] = None, turns_until_tau0=0):
+
     self_play = True if other_agent is None else False
 
     current_game = InternationalGame(1, None, None, None)
@@ -177,12 +178,12 @@ def train_manger(best_version):
             print(f'current version win ration: {ratio}')
 
             if ratio >= config.SCORING_THRESHOLD:
-                best_NN.model.set_weights(current_NN.model.get_weights())
+                best_NN.set_weights(current_NN.get_weights())
                 best_version = best_version + 1
-                best_NN.save('best alphazero', best_version)
+                ut.save_model(best_NN, 'best alphazero', best_version)
                 print('Saving a new version')
             else:
-                current_NN.save('alphazero' + str(best_version), iteration)
+                ut.save_model(current_NN, 'alphazero' + str(best_version), iteration)
                 print('Saving version progress')
 
         iteration += 1
