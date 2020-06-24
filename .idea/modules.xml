@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/.idea/checkers-server-master.iml" filepath="$PROJECT_DIR$/.idea/checkers-server-master.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/.idea/checkers-server.iml" filepath="$PROJECT_DIR$/.idea/checkers-server.iml" />
+>>>>>>> training_ploting
     </modules>
   </component>
 </project>

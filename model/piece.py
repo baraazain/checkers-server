@@ -30,7 +30,8 @@ class Piece:
         return cls(piece_cell, piece_type, piece_color, piece_dead)
 
     def __str__(self):
-        return "(" + self.cell.r + "," + self.cell.c + "," + self.color + ")"
+        return "(" + str(self.cell.r) + "," + str(self.cell.c) + "," \
+                + self.color + ' ' + self.type + ")"
 
     def __eq__(self, other):
         if isinstance(other, Piece):
@@ -40,3 +41,7 @@ class Piece:
                 elif self.cell.r == other.cell.r and self.cell.c == other.cell.c:
                     return True
         return False
+
+    def __hash__(self):
+        return hash((self.color, self.type, self.dead, 
+                     self.cell.r, self.cell.c))

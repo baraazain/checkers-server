@@ -1,7 +1,4 @@
 from abc import ABC, abstractmethod
-from random import randrange
-from copy import deepcopy
-import model as md
 from .game import Action
 
 
@@ -19,19 +16,6 @@ class Player(ABC):
     @abstractmethod
     def act(self, game) -> Action:
         pass
-    
-
-    @classmethod
-    def from_dict(cls, dictionary):
-        dictionary=deepcopy(dictionary)
-       # contests = []
-       # for contest in dictionary['current_contests']:
-        #  contests.append(md.contest.Contest.from_dict(contest))
-
-     #   dictionary['current_contests'] = contests
-        p = cls(None, None, None)
-        p.__dict__ = dictionary
-        return p
 
     def __eq__(self, other):
         if isinstance(other, Player):
@@ -40,6 +24,12 @@ class Player(ABC):
             if self.id == other.id:
                 return True
         return False
+
+    def on_update(self, action):
+        pass
+
+    def on_start(self, game):
+        pass
 
 
 class Human(Player, ABC):
@@ -70,6 +60,7 @@ class ConsolePlayer(Human):
 class Agent(Player, ABC):
     pass
 
+<<<<<<< HEAD
 
 class RandomAgent(Agent):
     def __init__(self, _id=None, name="Random", password=None, rate=1600, current_contests=[]):
@@ -121,3 +112,5 @@ class MiniMaxAgent(Agent, ABC):
     def act(self, game):
         value, action = self.max(int(-1e9), int(1e9), 0, game)
         return action
+=======
+>>>>>>> training_ploting

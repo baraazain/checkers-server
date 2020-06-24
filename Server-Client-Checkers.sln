@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Server-py", "Server-py.pyproj", "{77FD5706-A513-4003-928C-4BB06072CBFE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client-cs", "..\Client\Client-cs.csproj", "{26743D19-99C8-488F-9E65-9B9FF2B94BE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client-cs", "..\Client\Client-cs.csproj", "{26743D19-99C8-488F-9E65-9B9FF2B94BE5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,8 +11,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{77FD5706-A513-4003-928C-4BB06072CBFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{77FD5706-A513-4003-928C-4BB06072CBFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26743D19-99C8-488F-9E65-9B9FF2B94BE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{26743D19-99C8-488F-9E65-9B9FF2B94BE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26743D19-99C8-488F-9E65-9B9FF2B94BE5}.Release|Any CPU.ActiveCfg = Release|Any CPU

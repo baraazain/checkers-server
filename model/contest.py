@@ -18,6 +18,9 @@ class MaxParticipantsConstraint(Constraint):
     def is_valid(self, player):
         return self.num_of_participants + 1 <= self.max_participant
 
+    def ababa(self):
+        return "ababa"
+
 
 class NameConstraint(Constraint):
     def __init__(self):
@@ -122,6 +125,7 @@ class Contest:
         self.current_game = 0
         while not self.is_round_end():
             game = self.games[self.current_game]
+            game.start_game()
             self.current_game += 1
             game.start_game(self)
         self.participants = self.get_qualified_players()

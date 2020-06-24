@@ -6,6 +6,9 @@ from .actors import *
 from .grid import *
 import datetime
 
+# Constants
+MAXIMIZER = 1
+
 
 class Mode:
     INTERNATIONAL = "INTERNATIONAL"
@@ -20,6 +23,7 @@ class Action:
         self.dst:Cell = dst
         self.player:Player = player
         self.capture = None
+        self.promote = False
 
 
     @classmethod
@@ -68,30 +72,9 @@ class Game(ABC):
         self.black_pieces = []
         self.white_pieces = []
         self.current_turn = 1
-    
-
-    @classmethod
-    def from_dict(cls,dictionary):
-        dictionary=deepcopy(dictionary)
-        # same bug at contest class
-        dictionary['player1'] = Player.from_dict(dictionary['player1'])
-        dictionary['player2'] = Player.from_dict(dictionary['player2'])
-        dictionary['grid'] = Grid.from_dict(dictionary['grid'])
-        actionsx=[]
-        black=[]
-        white=[]
-        for action in dictionary['actions']:
-            actionsx.append(Action.from_dict(action))
-        for black_piece in dictionary['black_pieces']:
-            black.append(Piece.from_dict_(black_piece))
-        for white_piece in dictionary['white_pieces']:
-            white.append(Piece.from_dict(white_piece))
-        dictionary['actions']=actionsx
-        dictionary['black_pieces'] = black
-        dictionary['white_pieces'] = white
-        g=cls(None,None,None,None)
-        g.__dict__=dictionary
-        return g
+        self.paths = []
+        self.path = []
+        self.mx = 0
 
     @abstractmethod
     def init(self):
@@ -110,7 +93,7 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def get_maximum_captures(self, piece, player):
+    def get_maximum_captures(self, piece, player, turn):
         pass
 
     @abstractmethod
@@ -131,12 +114,12 @@ class Game(ABC):
 
     def get_all_possible_states(self):
         states = []
-        actions = self.get_all_possible_actions()
-        for action in actions:
+        paths = self.get_all_possible_actions()
+        for path in paths:
             new_state = deepcopy(self)
-            new_state.apply_action(action)
+            new_state.apply_turn(path)
             states.append(new_state)
-        return actions, states
+        return paths, states
 
     @abstractmethod
     def correct_king_eat(self, action):
@@ -157,6 +140,11 @@ class Game(ABC):
     @abstractmethod
     def is_legal_action(self, action):
         pass
+
+    def apply_turn(self, actions: list):
+        for action in actions:
+            self.apply_action(action)
+        self.current_turn = 3 - self.current_turn
 
     @abstractmethod
     def apply_action(self, action):
@@ -292,4 +280,4 @@ class Game(ABC):
         return int(player1_rate), int(player2_rate)
 
     def change_rate(self):
-        self.player1.rate, self.player2.rate = Game.calc_new_rate(self.player1.rate, Game.player2.rate, self.get_winner())
+        self.player1.rate, self.player2.rate = Game.calc_new_rate(self.player1.rate, self.player2.rate, self.get_winner())
