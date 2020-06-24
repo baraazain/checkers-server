@@ -1,9 +1,8 @@
 """A module that carry out the implementation of standard Monte Carlo tree search algorithm.
 """
+import random
 from math import sqrt, log
 from typing import Optional, List, Tuple
-
-import random
 
 from model.game import Action, Game, MAXIMIZER
 from .utils import GameState, evaluate, to_label, ActionEncoder, get_action_space
@@ -108,7 +107,7 @@ class MCTree:
             edge.stats['W'] += value * direction
 
     def expand(self, leaf: Node):
-        """
+        """Adds the node children to the search tree.
 
         :param leaf: The leaf node to expand
         :return:

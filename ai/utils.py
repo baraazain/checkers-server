@@ -1,25 +1,19 @@
 """A module that carry out the utility's used by the AI algorithms
 """
-from collections import deque
-
 import pickle
+from collections import deque
 
 import numpy as np
 import tensorflow.keras as tk
-
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras.models import load_model
-
-from .model import softmax_cross_entropy_with_logits
-from model.game import Action, Game
-from model.piece import Color, Type
 
 import ai.config as config
-
-# TODO: refactor the training pipeline
+from model.game import Action, Game
+from model.piece import Color, Type
+from .model import softmax_cross_entropy_with_logits, build_alphazero_model
 
 archive_folder = 'data/alphazero/datasets/'
-run_folder = 'data/alphazero/models/'
+weights_folder = 'data/alphazero/weights/'
 
 
 def to_label(action: Action):
@@ -103,15 +97,22 @@ def load_best_model() -> tk.models.Model:
     """
 
     print(f'loading version {config.CURRENT_VERSION}')
-    return load_model(run_folder
-                      + 'best alphazero '
-                      + f"{config.CURRENT_VERSION:0>3}"
-                      + '.h5',
-                      custom_objects={'softmax_cross_entropy_with_logits': softmax_cross_entropy_with_logits})
+
+    model = build_alphazero_model((10, 10, 25), len(get_action_space()), 8, 64, config.REG_CONST)
+
+    if config.CURRENT_VERSION is not None:
+        model.load_weights(weights_folder + 'best alphazero' + f" {config.CURRENT_VERSION:0>3}" + '.h5')
+
+    model.compile(loss={'value_head': 'mean_squared_error',
+                        'policy_head': softmax_cross_entropy_with_logits},
+                  optimizer=tk.optimizers.Adam(lr=config.LEARNING_RATE),
+                  loss_weights={'value_head': 0.5, 'policy_head': 0.5})
+
+    return model
 
 
 def save_model(model: tk.models.Model, name='alphazero', version=1):
-    model.save(run_folder + name + f" {version:0>3}" + '.h5')
+    model.save_weights(weights_folder + name + f" {version:0>3}" + '.h5')
 
 
 class GameState:
@@ -174,7 +175,7 @@ class StateStack:
         # initialize the image stack with zeros
         ret = np.zeros(self.get_input_shape())
 
-        # for each turn history mask it as a numpy array
+        # for each turn history we mask it as a numpy array
         for idx, state in enumerate(reversed(self.dq)):
             # we join the board pieces in one list for the ease of implementation
             pieces = state.white_pieces + state.black_pieces
@@ -188,13 +189,13 @@ class StateStack:
                 color_idx = 0 if piece.color == Color.WHITE else 1
 
                 if piece.type == Type.KING:
-                    # Masks the king pieces in (2, 4) planes for the (white, black) players respectively
+                    # Mask the king pieces in (2, 4) planes for the (white, black) players respectively
                     ret[row][column][color_idx + idx + 2] = 1
                 else:
-                    # Masks the pawn pieces in (1, 3) planes for the (white, black) players respectively
+                    # Mask the pawn pieces in (1, 3) planes for the (white, black) players respectively
                     ret[row][column][color_idx + idx] = 1
 
-            # masks the turn flag in the last plane (5) of the turn planes
+            # Mask the turn flag in the last plane (5) of the turn planes
             ret[0][0][idx + 4] = state.turn
 
         return ret

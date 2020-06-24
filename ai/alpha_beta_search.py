@@ -1,6 +1,7 @@
-from typing import Optional, List, Dict
-
+import random
+import sys
 import time
+from typing import Optional, List, Dict
 
 from model.game import Action, MAXIMIZER
 from .utils import GameState
@@ -40,7 +41,7 @@ class AlphaBetaSearch:
         self.start_time = None
         self.timeout_flag = False
         self.transposition_table: Dict[GameState, TableItem] = {}
-        self.tree: Dict[GameState, Node] = {}
+        self.graph: Dict[GameState, Node] = {}
         self.pov = pov
 
     @staticmethod
@@ -73,10 +74,10 @@ class AlphaBetaSearch:
 
         for action, state in zip(actions, states):
             try:
-                child = self.tree[state]
+                child = self.graph[state]
             except KeyError:
                 child = Node(state)
-                self.tree[state] = child
+                self.graph[state] = child
 
             node.edges.append(Edge(node, child, action))
 
@@ -196,11 +197,10 @@ class AlphaBetaSearch:
         node.edges.sort(key=self._cmp_edges, reverse=True)
         return alpha, best_action
 
-    def get_best_action(self):
+    def get_best_action(self) -> Action:
         i = 0
         ret_action = None
         self.timeout_flag = False
-        self.transposition_table.clear()
         start_time = time.monotonic()
 
         while True:
@@ -216,7 +216,24 @@ class AlphaBetaSearch:
             ret_action = action
             i += 1
 
+        if ret_action is None:
+            edge: Edge = random.choice(self.root.edges)
+            return edge.action
+
         return ret_action
 
     def update_root(self, action):
-        pass
+        if not self.root.edges:
+            self.expand(self.root)
+
+        for edge in self.root.edges:
+            if str(edge.action) == str(action):
+                self.root = edge.out_node
+                break
+
+        size = sys.getsizeof(self.graph)
+        print(size)
+        if size > 1024 * 1024 * 1024:
+            print("clearing memory")
+            self.graph.clear()
+            self.root = Node(self.root.game_state)
