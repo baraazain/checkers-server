@@ -13,7 +13,7 @@ import ai.modified_tree_search as mts
 import ai.standard_tree_search as sts
 import model.game as gm
 from model.actors import Agent
-from model.game import Action
+from model.action import Action
 from .alpha_beta_search import AlphaBetaSearch
 from .utils import GameState, load_best_model
 

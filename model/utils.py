@@ -1,3 +1,8 @@
+import json
+import datetime as dt
+
+from .grid import Cell, Grid
+from .piece import Piece
 
 
 def classify(rate: int) -> str:
@@ -25,19 +30,19 @@ def classify(rate: int) -> str:
 
 def get_categories() -> list:
     return ['novices',
-                  'Class D',
-                  'Class C',
-                  'Class B',
-                  'Class A',
-                  'Expert',
-                  'Candidate Master',
-                  'Master',
-                  'International Master',
-                  'Grand Master']
+            'Class D',
+            'Class C',
+            'Class B',
+            'Class A',
+            'Expert',
+            'Candidate Master',
+            'Master',
+            'International Master',
+            'Grand Master']
 
-    
-def calc_expected_score(old_rate: int, opp_rate: int) ->float:
-    res = 1 + 10**((opp_rate - old_rate) / 400)
+
+def calc_expected_score(old_rate: int, opp_rate: int) -> float:
+    res = 1 + 10 ** ((opp_rate - old_rate) / 400)
     return 1 / res
 
 
@@ -49,7 +54,7 @@ def calc_K(rate: int) -> int:
     return 16
 
 
-def calc_score(player_number: int, outcome: int) -> int:
+def calc_score(player_number: int, outcome: int) -> float:
     if outcome == 0:
         return 0.5
     if outcome == player_number:
@@ -61,9 +66,9 @@ def inverse(arg: list) -> list:
     ret = []
     for element in arg:
         if element == 0:
-            ret.append(arg)
+            ret.append(element)
         else:
-            ret.append(3 - arg)
+            ret.append(3 - element)
     return ret
 
 
@@ -78,3 +83,30 @@ def calc_new_rate(player_rate: int, opp_rates: list, outcomes: list) -> int:
     player_rate += calc_K(player_rate) * (score - exp_score)
 
     return int(player_rate)
+
+
+def to_dict(obj):
+    if isinstance(obj, dt.datetime):
+        return dict(year=obj.year,
+                    month=obj.month,
+                    day=obj.day,
+                    hour=obj.hour,
+                    minute=obj.minute,
+                    second=obj.second,
+                    tzinfo=obj.tzinfo)
+
+    else:
+        if isinstance(obj, Grid):
+            return dict(n=obj.n, m=obj.m, grid=None)
+        else:
+            if isinstance(obj, Piece):
+                return {'color': obj.color, 'type': obj.type, 'dead': obj.dead, 'cell': to_dict(obj.cell)}
+            else:
+                if isinstance(obj, Cell):
+                    return {'r': obj.r, 'c': obj.c, 'piece': None}
+                else:
+                    return obj.__dict__
+
+
+def to_json(obj):
+    return json.dumps(obj, default=to_dict, indent=4)

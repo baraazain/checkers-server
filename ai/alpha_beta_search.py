@@ -3,7 +3,8 @@ import sys
 import time
 from typing import Optional, List, Dict
 
-from model.game import Action, MAXIMIZER
+from model.game import MAXIMIZER
+from model.action import Action
 from .utils import GameState
 
 

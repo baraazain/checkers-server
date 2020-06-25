@@ -9,7 +9,8 @@ import tensorflow.keras as tk
 from sklearn.preprocessing import LabelEncoder
 
 import ai.config as config
-from model.game import Action, Game
+from model.game import Game
+from model.action import Action
 from model.piece import Color, Type
 from .model import softmax_cross_entropy_with_logits, build_alphazero_model
 

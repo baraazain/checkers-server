@@ -19,11 +19,9 @@ class Piece:
         self.cell = cell
         self.dead = False
 
-
-
     @classmethod
     def from_dict(cls, dictionary):
-        piece_cell = dictionary['cell']
+        piece_cell = Cell.from_dict(dictionary['cell'])
         piece_type = dictionary['type']
         piece_color = dictionary['color']
         piece_dead = dictionary['dead']
@@ -31,7 +29,7 @@ class Piece:
 
     def __str__(self):
         return "(" + str(self.cell.r) + "," + str(self.cell.c) + "," \
-                + self.color + ' ' + self.type + ")"
+               + self.color + ' ' + self.type + ")"
 
     def __eq__(self, other):
         if isinstance(other, Piece):
@@ -43,5 +41,5 @@ class Piece:
         return False
 
     def __hash__(self):
-        return hash((self.color, self.type, self.dead, 
+        return hash((self.color, self.type, self.dead,
                      self.cell.r, self.cell.c))

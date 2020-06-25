@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 
 from .piece import *
-from .actors import *
 from .grid import *
 import datetime
 
@@ -13,46 +12,6 @@ MAXIMIZER = 1
 class Mode:
     INTERNATIONAL = "INTERNATIONAL"
     TURKISH = "TURKISH"
-
-
-class Action:
-
-    def __init__(self, src, dst, player):
-        self.id = -1
-        self.src:Cell = src
-        self.dst:Cell = dst
-        self.player:Player = player
-        self.capture = None
-        self.promote = False
-
-
-    @classmethod
-    def from_dict(cls,dictionary):
-        dictionary=deepcopy(dictionary)
-
-        dictionary['src'] = Cell.from_dict(dictionary['src'])
-        dictionary['dst'] = Cell.from_dict(dictionary['dst'])
-        dictionary['player'] = Player.from_dict(dictionary['player'])
-        dictionary['capture'] = Piece.from_dict(dictionary['capture'])
-        action = Action(None, None, None)
-        action.__dict__ = dictionary
-        return action
-
-    def is_capture(self):
-        return self.capture is not None
-
-    def __str__(self):
-        ret = "(" + str(self.src.r + 1) + ',' + str(self.src.c + 1) + ")"
-        ret += "------->>>"
-        ret += "(" + str(self.dst.r + 1) + "," + str(self.dst.c + 1) + ")"
-        return ret
-
-    def __eq__(self, other):
-        if isinstance(other, Action):
-            if self.src == other.src and self.dst == other.dst:
-                if self.player == other.player and self.capture == other.capture:
-                    return True
-        return False
 
 
 class Game(ABC):

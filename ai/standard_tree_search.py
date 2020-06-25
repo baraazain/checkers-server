@@ -4,7 +4,8 @@ import random
 from math import sqrt, log
 from typing import Optional, List, Tuple
 
-from model.game import Action, Game, MAXIMIZER
+from model.game import Game, MAXIMIZER
+from model.action import Action
 from .utils import GameState, evaluate
 
 

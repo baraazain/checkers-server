@@ -1,7 +1,8 @@
 import copy
 
 from .actors import Player
-from .game import Game, Action
+from .game import Game
+from .action import Action
 from .grid import Grid
 from .piece import *
 
@@ -453,12 +454,12 @@ class InternationalGame(Game):
 
     def get_maximum_captures(self, piece, player, cur_value):
         if not self.can_capture(piece):
+            if self.mx == cur_value:
+                self.paths.append(copy.deepcopy(self.path))
+
             if self.mx < cur_value:
                 self.mx = cur_value
                 self.paths.clear()
-                self.paths.append(copy.deepcopy(self.path))
-
-            if self.mx == cur_value:
                 self.paths.append(copy.deepcopy(self.path))
 
             return cur_value, self.paths

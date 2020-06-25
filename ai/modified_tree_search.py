@@ -6,7 +6,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 
-from model.game import Action, MAXIMIZER
+from model.game import MAXIMIZER
+from model.action import Action
 from .config import EPSILON, ALPHA, CPUCT
 from .utils import StateStack, evaluate, to_label, ActionEncoder, GameState, get_action_space
 

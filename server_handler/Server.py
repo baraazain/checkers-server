@@ -1,3 +1,4 @@
+from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
 from server_handler.auth_handler import *
 from model.actors import *
@@ -14,6 +15,8 @@ all_player_connecting = {}
 all_game_playing = {}
 
 
+# TODO: needs to debug the module
+
 @sio.on('player_connect')
 async def player_connect(sid, player):
     pp = RemotePlayer.from_dict(json.loads(player))
@@ -25,27 +28,48 @@ async def player_connect(sid, player):
 
 @sio.event
 async def connect(sid, environ):
-    print('connect:', sid)
-    await sio.emit("login", room=sid)
+    print('connected: ', sid)
+#   await sio.emit("login", room=sid)
+
+
+@sio.event
+async def message(sid, data):
+    print(sid, 'say: ', data)
+
+
+@sio.event
+async def json_message(sid, data):
+    s = json.loads(data)
+    print(s)
+    print('json data as a python object')
+    print(Piece.from_dict(s))
+
+
+@sio.event
+async def json_message1(sid, data):
+    s = json.loads(data)
+    print(s)
+    print('json data as a python object')
+    print(RemotePlayer.from_dict(s))
 
 
 @sio.event
 async def disconnect(sid):
-    print('disconnect ', sid)
-    player = get_player_by_sid(sid, all_player_connecting)
-    del all_player_connecting[player.name]
+    print('disconnected: ', sid)
+#    player = get_player_by_sid(sid, all_player_connecting)
+#    del all_player_connecting[player.name]
 
 
 @sio.on('signup')
 async def signup(sid, player):
-    p=RemotePlayer().from_dict(json.loads(player))
+    p = RemotePlayer().from_dict(json.loads(player))
     p.sid = sid
     if signup_handle(player):
         result = Result(True, 'successful signup', None)
         all_player_connecting[p.name].name = p.name
         await sio.emit("signklup", to_json(result))
     else:
-        result = Result(False, 'failed signup <user name taken>')
+        result = Result(False, 'failed signup <user name taken>', None)
         await sio.emit("signup", to_json(result))
 
 
@@ -78,10 +102,10 @@ async def update_account(sid, update_player):
 async def remove_account(sid, player):
     if remove_account_handle(player):
         del all_player_connecting[player.id]
-        result = Result(True, 'successful delete')
+        result = Result(True, 'successful delete', None)
         await sio.emit("remove_account", to_json(result))
     else:
-        result = Result(False, "can't delete the account try again please")
+        result = Result(False, "can't delete the account try again please", None)
         await sio.emit("remove_account", to_json(result))
 
 
@@ -99,7 +123,7 @@ async def show_account(sid, player):
 @sio.on('save')
 async def save(sid, _id):
     player = get_player_by_sid(sid)
-    res = save_game_handle(_id , player)
+    res = save_game_handle(_id, player)
     if res:
         result = Result(True, "save is completed", None)
         await sio.emit("save", to_json(result))
@@ -133,4 +157,4 @@ async def load(sid, _id):
 
 
 if __name__ == '__main__':
-    web.run_app(app, host="localhost", port="8080")
+    web.run_app(app, host="localhost", port=8080)

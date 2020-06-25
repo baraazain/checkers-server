@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from .game import Action
+from .action import Action
 
 
 class Player(ABC):
@@ -15,7 +15,7 @@ class Player(ABC):
     @abstractmethod
     def act(self, game) -> Action:
         pass
-    
+
     def __eq__(self, other):
         if isinstance(other, Player):
             if other is self:
@@ -23,6 +23,15 @@ class Player(ABC):
             if self.id == other.id:
                 return True
         return False
+
+    def on_update(self, action):
+        pass
+
+    def on_start(self, game):
+        pass
+
+    def __str__(self):
+        return ''.join([str(self.id), ' ', self.name, ' ', self.password])
 
 
 class Human(Player, ABC):
@@ -38,7 +47,6 @@ class ConsolePlayer(Human):
         size = len(paths)
 
         for idx, path in enumerate(paths):
-
             print(''.join([str(idx + 1),
                            ". ",
                            ''.join(list(map(str, path)))
@@ -50,6 +58,19 @@ class ConsolePlayer(Human):
             if 0 > choice or size < choice:
                 continue
             return paths[choice - 1]
+
+
+class RemotePlayer(Human):
+    def __init__(self, sid=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sid = sid
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(None, data['id'], data['name'], data['password'])
+
+    def act(self, game):
+        pass
 
 
 class Agent(Player, ABC):
