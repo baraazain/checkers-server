@@ -1,8 +1,8 @@
 import copy
 
+from .action import Action
 from .actors import Player
 from .game import Game
-from .action import Action
 from .grid import Grid
 from .piece import *
 
@@ -470,7 +470,7 @@ class InternationalGame(Game):
         for capture in captures:
             self.path.append(capture)
             self.apply_action(capture)
-            _, __ = self.get_maximum_captures(piece, player, 1 + cur_value)
+            self.get_maximum_captures(piece, player, 1 + cur_value)
             self.undo()
             self.path.pop()
 

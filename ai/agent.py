@@ -12,8 +12,8 @@ import tensorflow.keras as tk
 import ai.modified_tree_search as mts
 import ai.standard_tree_search as sts
 import model.game as gm
-from model.actors import Agent
 from model.action import Action
+from model.actors import Agent
 from .alpha_beta_search import AlphaBetaSearch
 from .utils import GameState, load_best_model
 
@@ -138,7 +138,9 @@ class AlphaZero(Agent):
         state_stack = deepcopy(self.mct.state_stack)
         state_stack.push(self.mct.root.game_state)
 
-        return self.mct[action_id], state_stack, value, pi
+        action, flip_flag = self.mct[action_id]
+
+        return action, flip_flag, state_stack, value, pi
 
     def build_mct(self, game_state: GameState, model: tk.models.Model):
         self.mct = mts.MCTree(game_state, model)

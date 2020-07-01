@@ -69,7 +69,7 @@ def play_match(agent: AlphaZero,
         tau = 1 if turn < turns_until_tau0 else 0
 
         try:
-            action, state_stack, value, pi = current_agent.train_act(tau)
+            action, flip_flag, state_stack, value, pi = current_agent.train_act(tau)
         except KeyError as e:
             raise TreeError(e.args[0], current_game, tau, agent, other_agent)
 
@@ -87,6 +87,9 @@ def play_match(agent: AlphaZero,
             other_agent.on_update(action)
 
         turn += 1
+
+        if flip_flag:
+            current_game.current_turn = 3 - current_game.current_turn
 
         print('*', end='' if turn % 20 != 0 else '\n')
 

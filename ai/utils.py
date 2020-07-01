@@ -2,15 +2,15 @@
 """
 import pickle
 from collections import deque
-from copy import deepcopy
+from typing import List
 
 import numpy as np
 import tensorflow.keras as tk
 from sklearn.preprocessing import LabelEncoder
 
 import ai.config as config
-from model.game import Game
 from model.action import Action
+from model.game import Game
 from model.piece import Color, Type
 from .model import softmax_cross_entropy_with_logits, build_alphazero_model
 
@@ -57,7 +57,7 @@ def get_action_space(board_length=10, board_width=10):
         for j in range(board_width):
             moves_direction = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
             for move_dir in moves_direction:
-                for r in range(1, 10):
+                for r in range(1, board_length):
                     dir_i = move_dir[0] * r
                     dir_j = move_dir[1] * r
                     if valid(i + dir_i, j + dir_j, board_length, board_width):
@@ -128,16 +128,18 @@ class GameState:
         self.terminal = game.end()
         self.game_class = game.__class__
 
+    def get_game(self) -> Game:
+        return self.game_class.build(self.white_pieces, self.black_pieces, self.turn)
+
     def get_all_possible_states(self):
-        actions, states = self.game_class.build(self.white_pieces,
-                                                self.black_pieces, self.turn).get_all_possible_states()
+        paths, states = self.get_game().get_all_possible_states()
 
         ret = [GameState(state) for state in states]
 
-        return actions, ret
+        return paths, ret
 
-    def get_game(self):
-        return self.game_class.build(self.white_pieces, self.black_pieces, self.turn)
+    def get_all_possible_paths(self):
+        return self.get_game().get_all_possible_actions()
 
     def get_player_turn(self):
         return self.turn
@@ -163,7 +165,35 @@ class GameState:
 
 
 class MonteCarloGameState(GameState):
-    pass
+
+    def __init__(self, game: Game, path: List[Action] = None):
+        super().__init__(game)
+        self.current_path = path
+
+    def get_all_possible_states(self):
+        if self.current_path:
+            game: Game = self.get_game()
+            game.apply_action(self.current_path[0])
+            try:
+                cpy_path = self.current_path[1:]
+            except IndexError:
+                cpy_path = []
+            return [self.current_path[0]], MonteCarloGameState(game, cpy_path)
+
+        paths = self.get_game().get_all_possible_actions()
+        actions, states = [], []
+        for path in paths:
+            game: Game = self.get_game()
+            game.apply_action(path[0])
+
+            if len(path) > 1:
+                actions.append(path[0])
+                states.append(MonteCarloGameState(game, path[1:]))
+            else:
+                actions.append(path[0])
+                states.append(MonteCarloGameState(game, []))
+
+        return actions, states
 
 
 class StateStack:
@@ -212,8 +242,22 @@ class StateStack:
         self.dq.append(state)
         self.head = state
 
+    def pop(self):
+        ret = self.dq.pop()
+        self.head = self.dq[len(self.dq) - 1]
+        return ret
+
+    def pop_left(self):
+        return self.dq.popleft()
+
+    def push_left(self, state: GameState):
+        self.dq.appendleft(state)
+
     def __repr__(self):
         return self.dq.__repr__()
+
+    def __len__(self):
+        return len(self.dq)
 
 
 class ActionEncoder(LabelEncoder):
