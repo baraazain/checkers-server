@@ -635,3 +635,22 @@ class TurkishGame(Game):
         self.grid[src_r][src_c].piece.cell = dst
         self.grid[dst_r][dst_c].piece = self.grid[src_r][src_c].piece
         self.grid[src_r][src_c].piece = None
+
+    # undo the last move
+    def undo(self):
+        if self.actions:
+            action: Action = self.actions.pop()
+            src = action.src
+            dst = action.dst
+            piece = action.capture
+            if piece is not None:
+                piece.cell.piece = piece
+                piece.dead = False
+
+            if action.promote:
+                dst.set_type(Type.PAWN)
+
+            self.no_progress = action.no_progress_count
+            src.piece = dst.piece
+            dst.piece = None
+            src.piece.cell = src

@@ -628,6 +628,9 @@ class InternationalGame(Game):
             src = action.src
             dst = action.dst
 
+            if action.promote:
+                dst.set_type(Type.PAWN)
+
             self.no_progress = action.no_progress_count
             src.piece = dst.piece
             dst.piece = None

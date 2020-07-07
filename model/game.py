@@ -221,21 +221,6 @@ class Game(ABC):
             copy_action.capture = self.grid[capture_cell.r][capture_cell.c].piece
         return copy_action
 
-    # undo the last move
+    @abstractmethod
     def undo(self):
-        if self.actions:
-            action: Action = self.actions.pop()
-            src = action.src
-            dst = action.dst
-            piece = action.capture
-            if piece is not None:
-                piece.cell.piece = piece
-                piece.dead = False
-
-            if action.promote:
-                dst.set_type(Type.PAWN)
-
-            self.no_progress = action.no_progress_count
-            src.piece = dst.piece
-            dst.piece = None
-            src.piece.cell = src
+        pass
