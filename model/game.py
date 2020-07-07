@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
-from copy import deepcopy
 
+from .action import Action
 from .piece import *
-from .grid import *
-import datetime
 
 # Constants
 MAXIMIZER = 1
@@ -15,12 +13,14 @@ class Mode:
 
 
 class Game(ABC):
+    NO_PROGRESS_LIMIT = 16
 
     @classmethod
-    def build(cls, whitePieces, blackPieces, turn):
-        return None
+    @abstractmethod
+    def build(cls, whitePieces, blackPieces, turn, no_progress_count):
+        pass
 
-    def __init__(self, _id, player1, player2,date):
+    def __init__(self, _id, player1, player2, date):
         self.id = _id
         self.player1 = player1
         self.player2 = player2
@@ -34,6 +34,7 @@ class Game(ABC):
         self.paths = []
         self.path = []
         self.mx = 0
+        self.no_progress = Game.NO_PROGRESS_LIMIT
 
     @abstractmethod
     def init(self):
@@ -81,7 +82,7 @@ class Game(ABC):
         return paths, states
 
     @abstractmethod
-    def correct_king_eat(self, action):
+    def correct_king_capture(self, action):
         pass
 
     @abstractmethod
@@ -93,17 +94,16 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def correct_eat(self, action):
+    def correct_capture(self, action):
         pass
 
     @abstractmethod
     def is_legal_action(self, action):
         pass
 
+    @abstractmethod
     def apply_turn(self, actions: list):
-        for action in actions:
-            self.apply_action(action)
-        self.current_turn = 3 - self.current_turn
+        pass
 
     @abstractmethod
     def apply_action(self, action):
@@ -148,12 +148,12 @@ class Game(ABC):
         white_dead_cnt = 0
         black_dead_cnt = 0
         for piece in self.white_pieces:
-            if piece.dead:
+            if piece.dead or not self.can_move(piece):
                 white_dead_cnt += 1
         if white_dead_cnt == len(self.white_pieces):
             return 2
         for piece in self.black_pieces:
-            if piece.dead:
+            if piece.dead or not self.can_move(piece):
                 black_dead_cnt += 1
         if black_dead_cnt == len(self.black_pieces):
             return 1
@@ -185,11 +185,9 @@ class Game(ABC):
                 self.apply_action(self.player2.act(self))
         # self.currentTurn = 3 - self.currentTurn
 
-    @abstractmethod
-    def undo(self):
-        pass
-
     def end(self):
+        if self.no_progress <= 0:
+            return True
         if self.current_turn == 1:
             for piece in self.white_pieces:
                 if not piece.dead:
@@ -211,32 +209,33 @@ class Game(ABC):
         else:
             print("Draw -_-")
 
-    @staticmethod
-    def calc_expected_score(old_rate, opp_rate):
-        res = 1 + 10**((opp_rate - old_rate) / 400)
-        return 1 / res
+    def _validate_action(self, action):
+        src: Cell = action.src
+        dst: Cell = action.dst
+        src: Cell = self.grid[src.r][src.c]
+        dst: Cell = self.grid[dst.r][dst.c]
+        copy_action = Action(src, dst, action.player)
+        copy_action.no_progress_count = self.no_progress
+        if action.capture:
+            capture_cell = action.capture.cell
+            copy_action.capture = self.grid[capture_cell.r][capture_cell.c].piece
+        return copy_action
 
-    @staticmethod
-    def calc_K(rate):
-        if rate < 2100:
-            return 32
-        if 2200 <= rate < 2400:
-            return 24
-        return 16
+    # undo the last move
+    def undo(self):
+        if self.actions:
+            action: Action = self.actions.pop()
+            src = action.src
+            dst = action.dst
+            piece = action.capture
+            if piece is not None:
+                piece.cell.piece = piece
+                piece.dead = False
 
-    @staticmethod
-    def calc_score(player_number, outcome):
-        if outcome == 0:
-            return 0.5
-        if outcome == player_number:
-            return 1
-        return 0
+            if action.promote:
+                dst.set_type(Type.PAWN)
 
-    @staticmethod
-    def calc_new_rate(player1_rate, player2_rate, outcome):
-        player1_rate += Game.calc_K(player1_rate) * (Game.calc_score(1, outcome) - Game.calc_expected_score(player1_rate, player2_rate))
-        player2_rate += Game.calc_K(player2_rate) * (Game.calc_score(2, outcome) - Game.calc_expected_score(player2_rate, player1_rate))
-        return int(player1_rate), int(player2_rate)
-
-    def change_rate(self):
-        self.player1.rate, self.player2.rate = Game.calc_new_rate(self.player1.rate, self.player2.rate, self.get_winner())
+            self.no_progress = action.no_progress_count
+            src.piece = dst.piece
+            dst.piece = None
+            src.piece.cell = src

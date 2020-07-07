@@ -102,7 +102,6 @@ class MiniMaxAgent(Agent):
         self.abs.update_root(action)
 
 
-# TODO: needs to be re-implemented after merging the fixed bugs in game logic
 class AlphaZero(Agent):
     """A player that uses reinforcement learning and neural networks to take actions.
 

@@ -1,9 +1,5 @@
 import argparse
 
-import tensorflow as tf
-
-from ai.training_backyard import train_manger
-
 parser = argparse.ArgumentParser(description='Checkers Server.')
 parser.add_argument('--single', action='store_true')
 parser.add_argument('--level', '-lvl', metavar='level', type=int,
@@ -17,8 +13,24 @@ args = parser.parse_args()
 
 def main():
     print('Hello, World')
-    with tf.device('/device:GPU:0'):
-        train_manger(0)
+
+    # with tf.device('/device:GPU:0'):
+    #     generate_data()
+
+    # print(load(f))
+    from model.international_game import InternationalGame
+    from ai.agent import DummyAgent
+    game = InternationalGame(1, DummyAgent(), DummyAgent(), None)
+    game.init()
+    game.player1.on_start(game)
+    game.player2.on_start(game)
+    while not game.end():
+        print(game.grid)
+        path = game.get_current_player().act(game)
+        game.apply_turn(path)
+        game.player1.on_update(path)
+        game.player2.on_update(path)
+    game.print_the_winner()
 
 
 if __name__ == '__main__':

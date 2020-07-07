@@ -10,6 +10,7 @@ class Action:
         self.player = player
         self.capture = None
         self.promote = False
+        self.no_progress_count = 0
 
     def is_capture(self):
         return self.capture is not None

@@ -2,7 +2,7 @@
 """
 import pickle
 from collections import deque
-from typing import List
+from typing import Deque
 
 import numpy as np
 import tensorflow.keras as tk
@@ -14,7 +14,7 @@ from model.game import Game
 from model.piece import Color, Type
 from .model import softmax_cross_entropy_with_logits, build_alphazero_model
 
-archive_folder = 'data/alphazero/datasets/'
+archive_folder = 'data/alphazero/datasets'
 weights_folder = 'data/alphazero/weights/'
 
 
@@ -43,24 +43,23 @@ def valid(x, y, n, m):
     return 0 <= x < n and 0 <= y < m
 
 
-def get_action_space(board_length=10, board_width=10):
+def get_action_space(board_size=10):
     """Generates all possible actions for a piece in the game of checkers.
 
-    :param board_length:
-    :param board_width:
+    :param board_size:
     :return:
     """
 
     all_actions_list = []
 
-    for i in range(board_length):
-        for j in range(board_width):
+    for i in range(board_size):
+        for j in range(board_size):
             moves_direction = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
             for move_dir in moves_direction:
-                for r in range(1, board_length):
+                for r in range(1, board_size):
                     dir_i = move_dir[0] * r
                     dir_j = move_dir[1] * r
-                    if valid(i + dir_i, j + dir_j, board_length, board_width):
+                    if valid(i + dir_i, j + dir_j, board_size, board_size):
                         action = f"{i},{j}+{dir_i},{dir_j}"
                         all_actions_list.append(action)
     return all_actions_list
@@ -100,10 +99,10 @@ def load_best_model() -> tk.models.Model:
 
     print(f'loading version {config.CURRENT_VERSION}')
 
-    model = build_alphazero_model((10, 10, 25), len(get_action_space()), 8, 64, config.REG_CONST)
+    model = build_alphazero_model((10, 10, 30), len(get_action_space()), 8, 64, config.REG_CONST)
 
     if config.CURRENT_VERSION is not None:
-        model.load_weights(weights_folder + 'best alphazero' + f" {config.CURRENT_VERSION:0>3}" + '.h5')
+        model.load_weights(weights_folder + 'alphazero' + f" {config.CURRENT_VERSION:0>3}" + '.h5')
 
     model.compile(loss={'value_head': 'mean_squared_error',
                         'policy_head': softmax_cross_entropy_with_logits},
@@ -123,13 +122,13 @@ class GameState:
         self.white_pieces = game.white_pieces
         self.black_pieces = game.black_pieces
         self.turn = game.current_turn
+        self.no_progress = game.no_progress
         self.board_length = game.grid.n
         self.board_width = game.grid.m
-        self.terminal = game.end()
         self.game_class = game.__class__
 
     def get_game(self) -> Game:
-        return self.game_class.build(self.white_pieces, self.black_pieces, self.turn)
+        return self.game_class.build(self.white_pieces, self.black_pieces, self.turn, self.no_progress)
 
     def get_all_possible_states(self):
         paths, states = self.get_game().get_all_possible_states()
@@ -144,14 +143,12 @@ class GameState:
     def get_player_turn(self):
         return self.turn
 
-    def is_terminal(self):
-        return self.terminal
-
     def __eq__(self, other):
         if isinstance(other, GameState):
             my_pieces = self.white_pieces + self.black_pieces
             other_pieces = other.white_pieces + other.black_pieces
-            if my_pieces == other_pieces and self.turn == other.turn:
+            if my_pieces == other_pieces and self.turn == other.turn \
+                    and self.no_progress == other.no_progress:
                 return True
         return False
 
@@ -160,40 +157,8 @@ class GameState:
         hashable = tuple()
         for piece in my_pieces:
             hashable = hashable + (piece,)
-        hashable = hashable + (self.turn,)
+        hashable = hashable + (self.turn, self.no_progress)
         return hash(hashable)
-
-
-class MonteCarloGameState(GameState):
-
-    def __init__(self, game: Game, path: List[Action] = None):
-        super().__init__(game)
-        self.current_path = path
-
-    def get_all_possible_states(self):
-        if self.current_path:
-            game: Game = self.get_game()
-            game.apply_action(self.current_path[0])
-            try:
-                cpy_path = self.current_path[1:]
-            except IndexError:
-                cpy_path = []
-            return [self.current_path[0]], MonteCarloGameState(game, cpy_path)
-
-        paths = self.get_game().get_all_possible_actions()
-        actions, states = [], []
-        for path in paths:
-            game: Game = self.get_game()
-            game.apply_action(path[0])
-
-            if len(path) > 1:
-                actions.append(path[0])
-                states.append(MonteCarloGameState(game, path[1:]))
-            else:
-                actions.append(path[0])
-                states.append(MonteCarloGameState(game, []))
-
-        return actions, states
 
 
 class StateStack:
@@ -203,8 +168,8 @@ class StateStack:
     def __init__(self):
         self.head = None
         self.max_len = 5  # turns history
-        self.max_features = 5  # pieces planes (2 men) (2 kings) (1 turn flag)
-        self.dq = deque(maxlen=self.max_len)
+        self.max_features = 6  # pieces planes (2 men) (2 kings) (1 turn flag) (1 no progress count)
+        self.dq: Deque[GameState] = deque(maxlen=self.max_len)
 
     def get_input_shape(self):
         return self.head.board_length, self.head.board_width, self.max_features * self.max_len
@@ -233,8 +198,10 @@ class StateStack:
                     # Mask the pawn pieces in (1, 3) planes for the (white, black) players respectively
                     ret[row][column][color_idx + idx] = 1
 
-            # Mask the turn flag in the last plane (5) of the turn planes
+            # Mask the turn flag in the plane (5) of the turn planes
             ret[0][0][idx + 4] = state.turn
+            # Mask progress count in last plane
+            ret[0][0][idx + 5] = state.no_progress
 
         return ret
 
@@ -275,7 +242,7 @@ class ActionEncoder(LabelEncoder):
 
 class SampleBuilder:
     def __init__(self):
-        self.samples = deque(maxlen=50000)
+        self.samples = deque(maxlen=100000)
         self.moves = []
 
     def add_move(self, state_stack: StateStack, pi: np.array):
@@ -293,20 +260,22 @@ class SampleBuilder:
             self.samples.append(sample)
         self.moves.clear()
 
-    def save(self, version: int):
+    def save(self, version: int, path: str):
         """write the samples as a dataset file to the archive folder.
 
+        :param path:
         :param version: the dataset version
         :return:
         """
-        with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "wb") as f:
+        with open(''.join([path, "/dataset ", str(version).zfill(4), ".pk"]), "wb") as f:
             pickle.dump(self, f)
 
     @staticmethod
-    def load(version: int):
+    def load(version: int, path: str):
         """loads a specific version of the datasets in the archive folder
+        :param path:
         :param version: the dataset version
         :return:
         """
-        with open(archive_folder + "dataset " + str(version).zfill(4) + ".pk", "rb") as f:
+        with open(''.join([path, "/dataset ", str(version).zfill(4), ".pk"]), "rb") as f:
             return pickle.load(f)

@@ -39,7 +39,7 @@ class MCTree:
         self.root = Node(initial_state)
         self.model = model
         self.action_encoder = ActionEncoder()
-        self.action_encoder.fit(get_action_space(initial_state.board_length, initial_state.board_width))
+        self.action_encoder.fit(get_action_space(initial_state.board_length))
         self.state_stack = StateStack()
         self.graph = {initial_state: self.root}
 
@@ -141,7 +141,7 @@ class MCTree:
 
         value = float(predictions[0][0])
         # casting the tensor to a numpy array for the ease of broadcasting
-        logits = np.array(predictions[1][0])
+        logits = predictions[1][0].numpy()
 
         return value, logits
 
@@ -153,18 +153,20 @@ class MCTree:
         """
 
         game_state = leaf.game_state
+
+        leaf_game = game_state.get_game()
         # In case of an End game state we evaluate the leaf directly
-        if game_state.is_terminal():
+        if leaf_game.end():
             evaluation = evaluate(game_state)
             return evaluation if game_state.turn == MAXIMIZER else -evaluation
         else:
             # expanding phase
-            paths = state_stack.head.get_all_possible_paths()
+            paths = leaf_game.get_all_possible_actions()
 
             for path in paths:
                 # for each path we are going to add all of the actions to the tree simultaneously
                 current_node = leaf
-                current_state = state_stack.head
+                current_state = leaf.game_state
                 size = len(path)
 
                 for idx, action in enumerate(path):
@@ -195,10 +197,14 @@ class MCTree:
                     else:
                         current_node = current_node.edges[action_id].out_node
 
+            vis = set()
+
             # evaluate phase
             def dfs(node: Node, current_state_stack):
                 if not node.edges:
                     return 0, -1
+
+                vis.add(node.game_state)
 
                 v_sum = 0
                 actions_ids = []
@@ -217,7 +223,7 @@ class MCTree:
                 logits[mask] = -100
 
                 # Applying softmax activation to get the probability vector
-                probs = np.array(tf.nn.softmax(logits))
+                probs = tf.nn.softmax(logits).numpy()
 
                 # add the probability to newly added nodes
                 # sum the values of the children
@@ -231,18 +237,18 @@ class MCTree:
                         left_most_element = current_state_stack.pop_left()
                     current_state_stack.push(edge.out_node.game_state)
 
-                    ret_value, inc = dfs(edge.out_node, current_state_stack)
+                    if edge.out_node.game_state not in vis:
+                        ret_value, inc = dfs(edge.out_node, current_state_stack)
+                        v_sum += ret_value
+
+                        # update the edge statistics
+                        edge.stats['N'] = 1 + inc
+                        edge.stats['W'] = ret_value
+                        edge.stats['Q'] = edge.stats['W']
 
                     current_state_stack.pop()
                     if left_most_element is not None:
                         current_state_stack.push_left(left_most_element)
-
-                    v_sum += ret_value
-
-                    # update the edge statistics
-                    edge.stats['N'] = 1 + inc
-                    edge.stats['W'] = ret_value
-                    edge.stats['Q'] = edge.stats['W']
 
                 return v_sum + value, 0
 
@@ -263,10 +269,10 @@ class MCTree:
             values[edge.action_id] = edge.stats['Q']
 
         # Search probabilities pi are returned proportional to N^(1/tau)
-        pi = np.power(pi, 1 / max(0.01, tau))  # taking maximum to avoid division by zero and to prevent overflow
+        pi = tf.math.pow(pi, 1 / max(0.01, tau))  # taking maximum to avoid division by zero and to prevent overflow
 
         # Normalize the vector to represent a probability vector
-        pi = pi / np.sum(pi)
+        pi = tf.math.divide(pi, tf.math.reduce_sum(pi)).numpy()
 
         return pi, values
 

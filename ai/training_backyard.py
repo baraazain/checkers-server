@@ -1,10 +1,10 @@
+import json
 import random
 import time
 from copy import deepcopy
 from typing import Optional
 
 import numpy as np
-import tensorflow as tf
 import tensorflow.keras as tk
 
 import ai.config as config
@@ -15,7 +15,10 @@ from model.international_game import InternationalGame
 
 
 def get_models():
-    return ut.load_best_model(), ut.load_best_model()
+    current = ut.load_best_model()
+    best = ut.load_best_model()
+    best.set_weights(current.get_weights())
+    return current, best
 
 
 class RejectedActionError(Exception):
@@ -36,27 +39,30 @@ class TreeError(Exception):
         self.agent = agent
 
 
-random.seed(101)
-np.random.seed(101)
-tf.random.set_seed(101)
+# random.seed(101)
+# np.random.seed(101)
+# tf.random.set_seed(101)
 
 
-def play_match(agent: AlphaZero,
-               model: tk.models.Model,
-               other_agent: Optional[AlphaZero] = None,
+def play_match(model: tk.models.Model,
                other_model: Optional[tk.models.Model] = None, turns_until_tau0=0):
-
-    self_play = True if other_agent is None else False
+    self_play = True if other_model is None else False
 
     current_game = InternationalGame(1, None, None, None)
     sample_builder = ut.SampleBuilder()
 
     current_game.init()
 
-    agent.build_mct(ut.GameState(deepcopy(current_game)), model)
+    agent = AlphaZero(config.MCTS_SIMS)
+
     if not self_play:
-        if other_model is None:
-            raise ValueError('illegal argument: other_model can\'t be None when other_model is\'nt')
+        other_agent = AlphaZero(config.MCTS_SIMS)
+    else:
+        other_agent = None
+
+    agent.build_mct(ut.GameState(deepcopy(current_game)), model)
+
+    if not self_play:
         other_agent.build_mct(ut.GameState(deepcopy(current_game)), other_model)
 
     turn = 0
@@ -141,52 +147,69 @@ def fit(model, samples):
     return overall_loss, value_loss, policy_loss
 
 
-def train_manger(best_version):
+def generate_data():
     iteration = 0
+
+    dataset = ut.SampleBuilder()
+
+    current_NN = ut.load_best_model()
+
     while True:
-        current_NN, best_NN = get_models()
-
-        current_agent = AlphaZero(config.MCTS_SIMS)
-        best_agent = AlphaZero(config.MCTS_SIMS)
-
-        dataset = ut.SampleBuilder()
 
         for i in range(config.EPISODES):
-            print(f'Episode {i} started')
+            print(f'Episode {i + 1} started')
             start_time = time.monotonic()
-            sb, _ = play_match(current_agent, current_NN, turns_until_tau0=config.TURNS_UNTIL_TAU0)
+            sb, _ = play_match(current_NN, turns_until_tau0=config.TURNS_UNTIL_TAU0)
             dataset.samples.extend(sb.samples)
-            print(f'Episode {i} ended in {(time.monotonic() - start_time) / 60} minutes')
+            print(f'Episode {i + 1} ended in {(time.monotonic() - start_time) / 60} minutes')
 
         size = len(dataset.samples)
-        if iteration % 2:
-            dataset.save(iteration)
-            print(f'Gathered {size} sample')
-
-        if size >= config.DATA_LEN:
-
-            overall_loss, value_loss, policy_loss = fit(current_agent.mct.model, dataset.samples)
-
-            score = {'agent': 0, 'draw': 0, 'other': 0}
-
-            for i in range(config.EVAL_EPISODES):
-                print(f'Evaluation episode {i} started')
-                start_time = time.monotonic()
-                _, winner = play_match(current_agent, current_NN, best_agent, best_NN)
-                score[winner] += 1
-                print(f'Evaluation episode {i} ended in {(time.monotonic() - start_time) / 60} minutes')
-
-            ratio = score['agent'] * 100 // config.EVAL_EPISODES
-
-            print(f'current version win ration: {ratio}')
-
-            if ratio >= config.SCORING_THRESHOLD:
-                best_NN.set_weights(current_NN.get_weights())
-                best_version = best_version + 1
-                ut.save_model(best_NN, 'best alphazero', best_version)
-                print('Saving a new version')
-            else:
-                ut.save_model(current_NN, 'alphazero' + str(best_version), iteration)
-                print('Saving version progress')
+        dataset.save(iteration, ''.join([ut.archive_folder, '/tmp']))
+        print(f'Gathered {size} sample')
 
         iteration += 1
+
+
+def evaluate(best_version, current_NN, best_NN):
+    score = {'agent': 0, 'draw': 0, 'other': 0}
+
+    for i in range(config.EVAL_EPISODES):
+        print(f'Evaluation episode {i + 1} started')
+        start_time = time.monotonic()
+        _, winner = play_match(current_NN, best_NN)
+        score[winner] += 1
+        print(f'Evaluation episode {i + 1} ended in {(time.monotonic() - start_time) / 60} minutes')
+
+    ratio = score['agent'] * 100 // config.EVAL_EPISODES
+
+    print(f'current version win ration: {ratio}')
+
+    if ratio >= config.SCORING_THRESHOLD:
+        best_NN.set_weights(current_NN.get_weights())
+        best_version = best_version + 1
+        ut.save_model(best_NN, version=best_version)
+        print('Saving a new version')
+
+
+def train(current_NN, dataset, iteration):
+    try:
+        with open('data/alphazero/loss.json', 'r') as f:
+            try:
+                mp = json.load(f)
+            except json.JSONDecodeError:
+                mp = {}
+    except FileNotFoundError:
+        mp = {}
+
+    overall_loss, value_loss, policy_loss = fit(current_NN, dataset.samples)
+
+    mp[f'iteration {iteration}'] = {'overall_loss': overall_loss,
+                                    'value_loss': value_loss,
+                                    'policy_loss': policy_loss}
+
+    with open('data/alphazero/loss.json', 'w') as f:
+        json.dump(mp, f, indent=4)
+
+
+def merge_datasets(path):
+    pass

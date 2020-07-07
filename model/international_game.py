@@ -9,7 +9,7 @@ from .piece import *
 
 class InternationalGame(Game):
     @classmethod
-    def build(cls, white_pieces: list, black_pieces: list, turn: int):
+    def build(cls, white_pieces: list, black_pieces: list, turn: int, no_progress_count: int):
         game = cls(-1, None, None, None)
         game.white_pieces = copy.deepcopy(white_pieces)
         game.black_pieces = copy.deepcopy(black_pieces)
@@ -19,6 +19,7 @@ class InternationalGame(Game):
             if not piece.dead:
                 game.grid[piece.cell.r][piece.cell.c].piece = piece
                 piece.cell = game.grid[piece.cell.r][piece.cell.c]
+        game.no_progress_count = no_progress_count
         return game
 
     # for testing purposes
@@ -45,6 +46,7 @@ class InternationalGame(Game):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.grid = Grid(10, 10)
+        self.promote = False
 
     # initialize the grid and add pieces to their respective array
     def init(self):
@@ -99,7 +101,7 @@ class InternationalGame(Game):
         @return true if correct king eat and false otherwise.
     """
 
-    def correct_king_eat(self, action: Action):
+    def correct_king_capture(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
         src_r = src.r
@@ -117,14 +119,22 @@ class InternationalGame(Game):
         cur_r = src_r + dir_r
         cur_c = src_c + dir_c
         cnt = 0
+        piece = None
         while cur_r != dst_r:
             if self.grid[cur_r][cur_c].get_color() == src.get_color():
                 return False
             if self.grid[cur_r][cur_c].piece is not None:
                 cnt += 1
+                piece = self.grid[cur_r][cur_c].piece
             cur_r += dir_r
             cur_c += dir_c
-        return cnt == 1
+        if cnt == 1:
+            for action in self.path:
+                if action.capture == piece:
+                    return False
+            return True
+        else:
+            return False
 
     """
         Check if the move is correct soldier walk or not.
@@ -164,12 +174,12 @@ class InternationalGame(Game):
         return False
 
     """
-        Check if the move is correct soldier eat or not.
+        Check if the move is correct pawn capture or not.
         @param move the move to check.
         @return true if correct pawn eat and false otherwise.
     """
 
-    def correct_eat(self, action: Action):
+    def correct_capture(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
         src_r = src.r
@@ -177,21 +187,26 @@ class InternationalGame(Game):
         dst_r = dst.r
         dst_c = dst.c
         if src.get_type() == Type.KING:
-            return self.correct_king_eat(action)
+            return self.correct_king_capture(action)
         if src.piece is None:
-            return False
+            return False, None
         if dst.piece is not None:
-            return False
+            return False, None
         if abs(src_r - dst_r) != 2 or abs(src_c - dst_c) != 2:
-            return False
+            return False, None
+
         middle_r = (src_r + dst_r) // 2
         middle_c = (src_c + dst_c) // 2
         middle_cell = self.grid[middle_r][middle_c]
         if middle_cell.piece is None:
-            return False
+            return False, None
         if middle_cell.get_color() == src.get_color():
-            return False
-        return True
+            return False, None
+
+        for action in self.path:
+            if action.capture == middle_cell.piece:
+                return False, None
+        return True, middle_cell.piece
 
     """
         Check if piece can walk primary diagonal.
@@ -264,7 +279,8 @@ class InternationalGame(Game):
             cur_c -= 1
             dst = self.grid[cur_r][cur_c]
             action = Action(src, dst, None)
-            if self.correct_eat(action):
+            ans, _ = self.correct_capture(action)
+            if ans:
                 return True
         cur_r = src.r
         cur_c = src.c
@@ -273,7 +289,8 @@ class InternationalGame(Game):
             cur_c += 1
             dst = self.grid[cur_r][cur_c]
             action = Action(src, dst, None)
-            if self.correct_eat(action):
+            ans, _ = self.correct_capture(action)
+            if ans:
                 return True
         return False
 
@@ -292,7 +309,8 @@ class InternationalGame(Game):
             cur_c -= 1
             dst = self.grid[cur_r][cur_c]
             action = Action(src, dst, None)
-            if self.correct_eat(action):
+            ans, _ = self.correct_capture(action)
+            if ans:
                 return True
         cur_r = src.r
         cur_c = src.c
@@ -301,7 +319,8 @@ class InternationalGame(Game):
             cur_c += 1
             dst = self.grid[cur_r][cur_c]
             action = Action(src, dst, None)
-            if self.correct_eat(action):
+            ans, _ = self.correct_capture(action)
+            if ans:
                 return True
         return False
 
@@ -387,7 +406,9 @@ class InternationalGame(Game):
         while st_r < 10 and st_c < 10:
             dst = self.grid[st_r][st_c]
             action = Action(src, dst, current_player)
-            if self.correct_eat(action):
+            ans, piece = self.correct_capture(action)
+            if ans:
+                action.capture = piece
                 actions.append(action)
             st_r += 1
             st_c += 1
@@ -412,7 +433,9 @@ class InternationalGame(Game):
         while st_r < 10 and st_c >= 0:
             dst = self.grid[st_r][st_c]
             action = Action(src, dst, current_player)
-            if self.correct_eat(action):
+            ans, piece = self.correct_capture(action)
+            if ans:
+                action.capture = piece
                 actions.append(action)
             st_r += 1
             st_c -= 1
@@ -514,43 +537,8 @@ class InternationalGame(Game):
     """
 
     def move_like_king(self, action: Action):
-        src_r = action.src.r
-        src_c = action.src.c
-        dst_r = action.dst.r
-        dst_c = action.dst.c
-        src: Cell = action.src
-        dst: Cell = action.dst
+        pass
 
-        """
-        No need to remove then add piece as we have the reference to the piece
-        changes will apply in the list -_-
-        """
-
-        # the direction that src has to move to reach dst.
-        dir_r = (dst_r - src_r) // abs(dst_r - src_r)
-        dir_c = (dst_c - src_c) // abs(dst_c - src_c)
-        cur_r = src_r + dir_r
-        cur_c = src_c + dir_c
-
-        # print(self.grid)
-
-        while cur_r != dst_r:
-            cur: Cell = self.grid[cur_r][cur_c]
-            """ 
-                if we get reach to non-empty piece, so we need to erase it from
-                the board (eat case)
-            """
-            if cur.piece is not None:
-                action.capture = cur.piece
-                cur.piece.dead = True
-                cur.piece = None
-                break
-            cur_r += dir_r
-            cur_c += dir_c
-
-        src.piece.cell = dst
-        dst.piece = src.piece
-        src.piece = None
     """     
         @param move the move needs to implement
         @return if the given move can be implemented or not
@@ -571,17 +559,29 @@ class InternationalGame(Game):
         if self.current_turn == 2 and self.grid[r][c].get_color() != Color.BLACK:
             return False
         action = self._validate_action(action)
-        if self.correct_eat(action) or self.correct_walk(action):
+        if self.correct_capture(action) or self.correct_walk(action):
             return True
         return False
 
-    def _validate_action(self, action):
-        src: Cell = action.src
-        dst: Cell = action.dst
-        src: Cell = self.grid[src.r][src.c]
-        dst: Cell = self.grid[dst.r][dst.c]
-        copy_action = Action(src, dst, action.player)
-        return copy_action
+    def apply_turn(self, actions: list):
+        size = len(actions)
+
+        validated_actions = []
+        for action in actions:
+            validated_actions.append(self._validate_action(action))
+
+        for idx, action in enumerate(validated_actions):
+            self.apply_action(action)
+            if idx == size - 1:
+                self.promote = True
+
+        for action in validated_actions:
+            if action.capture is not None:
+                action.capture.dead = True
+                action.capture.cell.piece = None
+
+        self.promote = False
+        self.current_turn = 3 - self.current_turn
 
     """    
         apply the given move
@@ -589,8 +589,9 @@ class InternationalGame(Game):
     """
 
     def apply_action(self, action: Action):
+        self.no_progress -= 1
+
         # we store the copy move in the moves list not the given move
-        action = self._validate_action(action)
         self.actions.append(action)
         src: Cell = action.src
         dst: Cell = action.dst
@@ -598,41 +599,26 @@ class InternationalGame(Game):
         src_c = src.c
         dst_r = dst.r
         dst_c = dst.c
-        # if the move is king move
 
-        # print(src, src.piece)
-        if src.get_type() == Type.KING:
-            self.move_like_king(action)
-            return
-        # this move isn't king move, so it's soldier move
-        """
-            we get the middle cell between src and dst, in case of WALK the
-            middle cell will be either the src cell or dst cell, in case of EAT 
-            the middle cell will be the eaten cell
-        """
-        middle_r = (src_r + dst_r) // 2
-        middle_c = (src_c + dst_c) // 2
-        middle: Cell = self.grid[middle_r][middle_c]
         # in case of EAT
-        if middle != dst and middle != src and middle.piece is not None:
-            #            copyAction.eat = deepcopy(middle.piece)
-            action.capture = middle.piece
-            middle.piece.dead = True
-            # self.removePiece(middle.piece)
-            middle.piece = None
+        if action.capture is not None:
+            self.no_progress = self.NO_PROGRESS_LIMIT
 
-        # removePiece(src)
         self.grid[src_r][src_c].piece.cell = dst
         self.grid[dst_r][dst_c].piece = self.grid[src_r][src_c].piece
         self.grid[src_r][src_c].piece = None
-        # addPiece(dst.getPiece())
-        # if a pawn reaches the end, it'll promoted to king
-        if dst.get_color() == Color.WHITE and dst.r == 0:
-            dst.set_type(Type.KING)
-            action.promote = True
-        if dst.get_color() == Color.BLACK and dst.r == 9:
-            dst.set_type(Type.KING)
-            action.promote = True
+
+        if self.promote:
+            # if a pawn stop at the end, it'll promoted to king
+            if dst.get_color() == Color.WHITE and dst.r == 0:
+                dst.set_type(Type.KING)
+                action.promote = True
+                self.no_progress = self.NO_PROGRESS_LIMIT
+
+            if dst.get_color() == Color.BLACK and dst.r == 9:
+                dst.set_type(Type.KING)
+                action.promote = True
+                self.no_progress = self.NO_PROGRESS_LIMIT
 
     # undo the last move
     def undo(self):
@@ -640,12 +626,8 @@ class InternationalGame(Game):
             action: Action = self.actions.pop()
             src = action.src
             dst = action.dst
-            piece = action.capture
-            if piece is not None:
-                piece.cell.piece = piece
-                piece.dead = False
-            if action.promote:
-                dst.set_type(Type.PAWN)
+
+            self.no_progress = action.no_progress_count
             src.piece = dst.piece
             dst.piece = None
             src.piece.cell = src

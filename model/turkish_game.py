@@ -1,15 +1,15 @@
 import copy
 
+from .action import Action
 from .actors import Player
 from .game import Game
-from .action import Action
 from .grid import Grid
 from .piece import *
 
 
 class TurkishGame(Game):
     @classmethod
-    def build(cls, white_pieces: list, black_pieces: list, turn: int):
+    def build(cls, white_pieces: list, black_pieces: list, turn: int, no_progress_count: int):
         game = cls(-1, None, None, None)
         game.white_pieces = copy.deepcopy(white_pieces)
         game.black_pieces = copy.deepcopy(black_pieces)
@@ -19,6 +19,7 @@ class TurkishGame(Game):
             if not piece.dead:
                 game.grid[piece.cell.r][piece.cell.c].piece = piece
                 piece.cell = game.grid[piece.cell.r][piece.cell.c]
+        game.no_progress_count = no_progress_count
         return game
 
     # for testing purposes
@@ -45,8 +46,7 @@ class TurkishGame(Game):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.grid = Grid(8, 8)
-
-        # initialize the grid and add pieces to their respective array
+        self.promote = None
 
     def init(self):
         for i in range(1, 3):
@@ -104,7 +104,7 @@ class TurkishGame(Game):
         @return true if correct king eat and false otherwise.
     """
 
-    def correct_king_eat(self, action: Action):
+    def correct_king_capture(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
         src_r = src.r
@@ -184,7 +184,7 @@ class TurkishGame(Game):
         @return true if correct pawn eat and false otherwise.
     """
 
-    def correct_eat(self, action: Action):
+    def correct_capture(self, action: Action):
         src: Cell = action.src
         dst: Cell = action.dst
         src_r = src.r
@@ -192,7 +192,7 @@ class TurkishGame(Game):
         dst_r = dst.r
         dst_c = dst.c
         if src.get_type() == Type.KING:
-            return self.correct_king_eat(action)
+            return self.correct_king_capture(action)
         if src.piece is None:
             return False
         if dst.piece is not None:
@@ -250,7 +250,7 @@ class TurkishGame(Game):
         action = Action(src, dst, None)
         if self.correct_walk(action):
             return True
-        while cur_r < 7:# cuR > 0
+        while cur_r < 7:  # cuR > 0
             cur_r += 1
             dst = self.grid[cur_r][cur_c]
             action = Action(src, dst, None)
@@ -270,13 +270,13 @@ class TurkishGame(Game):
         cur_c = 0
         dst = self.grid[cur_r][cur_c]
         action = Action(src, dst, None)
-        if self.correct_eat(action):
+        if self.correct_capture(action):
             return True
         while cur_c < 7:
             cur_c += 1
             dst = self.grid[cur_r][cur_c]
             action = Action(src, dst, None)
-            if self.correct_eat(action):
+            if self.correct_capture(action):
                 return True
         return False
 
@@ -292,13 +292,13 @@ class TurkishGame(Game):
         cur_c = src.c
         dst = self.grid[cur_r][cur_c]
         action = Action(src, dst, None)
-        if self.correct_eat(action):
+        if self.correct_capture(action):
             return True
         while cur_r < 7:
             cur_r += 1
             dst = self.grid[cur_r][cur_c]
             action = Action(src, dst, None)
-            if self.correct_eat(action):
+            if self.correct_capture(action):
                 return True
         return False
 
@@ -374,7 +374,7 @@ class TurkishGame(Game):
         while st_c < 8:
             dst = self.grid[st_r][st_c]
             action = Action(src, dst, current_player)
-            if self.correct_eat(action):
+            if self.correct_capture(action):
                 actions.append(action)
             st_c += 1
         return actions
@@ -395,7 +395,7 @@ class TurkishGame(Game):
         while st_r < 8:
             dst = self.grid[st_r][st_c]
             action = Action(src, dst, current_player)
-            if self.correct_eat(action):
+            if self.correct_capture(action):
                 actions.append(action)
             st_r += 1
         return actions
@@ -565,26 +565,46 @@ class TurkishGame(Game):
         if self.current_turn == 2 and self.grid[r][c].get_color() != Color.BLACK:
             return False
         action = self._validate_action(action)
-        if self.correct_eat(action) or self.correct_walk(action):
+        if self.correct_capture(action) or self.correct_walk(action):
             return True
         return False
 
-    def _validate_action(self, action):
-        src: Cell = action.src
-        dst: Cell = action.dst
-        src: Cell = self.grid[src.r][src.c]
-        dst: Cell = self.grid[dst.r][dst.c]
-        copy_action = Action(src, dst, action.player)
-        return copy_action
+    def apply_turn(self, actions: list):
+        validated_actions = []
+        for action in actions:
+            validated_actions.append(self._validate_action(action))
 
-    """    
+        piece = validated_actions[0].src.piece
+
+        for action in validated_actions:
+            self.apply_action(action)
+
+        for action in validated_actions:
+            if piece.type != Type.KING:
+                # if a pawn reaches the end, it'll promoted to king
+                if piece.color == Color.WHITE and action.dst.r == 0:
+                    piece.type = Type.KING
+                    action.promote = True
+                    self.no_progress = self.NO_PROGRESS_LIMIT
+                    break
+
+                if piece.color == Color.BLACK and action.dst.r == 7:
+                    piece.type = Type.KING
+                    action.promote = True
+                    self.no_progress = self.NO_PROGRESS_LIMIT
+                    break
+
+        self.current_turn = 3 - self.current_turn
+
+    """
         apply the given move
         @param move the move to apply
     """
 
     def apply_action(self, action: Action):
+        self.no_progress = self.NO_PROGRESS_LIMIT
+
         # we store the copy move in the moves list not the given move
-        action = self._validate_action(action)
         self.actions.append(action)
         src: Cell = action.src
         dst: Cell = action.dst
@@ -596,7 +616,7 @@ class TurkishGame(Game):
         if src.get_type() == Type.KING:
             self.move_like_king(action)
             return
-        # this move isn't king move, so it's soldier move
+        # this move isn't king move, so it's pawn move
         """
             we get the middle cell between src and dst, in case of WALK the
             middle cell will be either the src cell or dst cell, in case of EAT 
@@ -607,42 +627,11 @@ class TurkishGame(Game):
         middle: Cell = self.grid[middle_r][middle_c]
         # in case of EAT
         if middle != dst and middle != src and middle.piece is not None:
-            #            copyAction.eat = deepcopy(middle.piece)
             action.capture = middle.piece
             middle.piece.dead = True
-            # self.removePiece(middle.piece)
             middle.piece = None
+            self.no_progress = self.NO_PROGRESS_LIMIT
 
-        # removePiece(src)
         self.grid[src_r][src_c].piece.cell = dst
         self.grid[dst_r][dst_c].piece = self.grid[src_r][src_c].piece
         self.grid[src_r][src_c].piece = None
-        # addPiece(dst.getPiece())
-        # if a pawn reaches the end, it'll promoted to king
-        if dst.get_color() == Color.WHITE and dst.r == 0:
-            dst.set_type(Type.KING)
-            action.promote = True
-        if dst.get_color() == Color.BLACK and dst.r == 7:
-            dst.set_type(Type.KING)
-            action.promote = True
-        #if action.capture is not None and self.can_capture(self.grid[dst_r][dst_c].piece):
-         #   return
-
-        #self.current_turn = 3 - self.current_turn
-
-    # undo the last move
-    def undo(self):
-        action: Action = self.actions.pop()
-        src = action.src
-        dst = action.dst
-        piece = action.capture
-        if piece is not None:
-            piece.cell.piece = piece
-            piece.dead = False
-        if dst.get_color() == Color.WHITE and dst.r == 0:
-            dst.set_type(Type.PAWN)
-        if dst.get_color() == Color.BLACK and dst.r == 9:
-            dst.set_type(Type.PAWN)
-        src.piece = dst.piece
-        dst.piece = None
-        src.piece.cell = src

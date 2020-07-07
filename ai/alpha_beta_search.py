@@ -3,14 +3,16 @@ import sys
 import time
 from typing import Optional, List, Dict
 
-from model.game import MAXIMIZER
 from model.action import Action
+from model.game import MAXIMIZER
+from model.piece import Type
 from .utils import GameState
 
 
 class Node:
     """Search tree node.
     """
+
     def __init__(self, game_state: GameState):
         self.game_state = game_state
         self.edges: List[Edge] = []
@@ -52,7 +54,26 @@ class AlphaBetaSearch:
         :param node: the node to evaluate
         :return: the value of the board
         """
-        return 0
+        game = node.game_state.get_game()
+        if game.end():
+            return int(1e12) if game.get_winner() == MAXIMIZER else int(-1e12)
+
+        res = 0
+        for piece in game.white_pieces:
+            if not piece.dead:
+                if piece.type == Type.KING:
+                    res += 100
+                else:
+                    res += 1
+
+        for piece in game.black_pieces:
+            if not piece.dead:
+                if piece.type == Type.KING:
+                    res -= 100
+                else:
+                    res -= 1
+
+        return res
 
     def _cmp_edges(self, edge: Edge) -> int:
         """Defines the comparing method for sorting edges.
@@ -94,8 +115,8 @@ class AlphaBetaSearch:
         table_item.evaluation = evaluation
         table_item.best_action = best_action
 
-    def min(self, node: Node, depth: int, start_time: float, alpha: int = -1e9, beta: int = 1e9):
-        if depth == 0 or node.game_state.is_terminal():
+    def min(self, node: Node, depth: int, start_time: float, alpha: int = -1e12, beta: int = 1e12):
+        if depth == 0 or node.game_state.get_game().end():
             evaluation = -self.evaluate(node)
             self.transposition_table[node.game_state] = TableItem(node, evaluation)
             return evaluation, None
@@ -129,6 +150,7 @@ class AlphaBetaSearch:
                 best_action = edge.action
 
             if alpha >= beta:
+                # print("alpha cut!")
                 self.memo(node, alpha, None)
                 node.edges.sort(key=self._cmp_edges)
                 return alpha, None
@@ -137,8 +159,8 @@ class AlphaBetaSearch:
         node.edges.sort(key=self._cmp_edges)
         return beta, best_action
 
-    def max(self, node: Node, depth: int, start_time: float, alpha: int = -1e9, beta: int = 1e9):
-        if depth == 0 or node.game_state.is_terminal():
+    def max(self, node: Node, depth: int, start_time: float, alpha: int = -1e12, beta: int = 1e12):
+        if depth == 0 or node.game_state.get_game().end():
             evaluation = self.evaluate(node)
             self.transposition_table[node.game_state] = TableItem(node, evaluation)
             return evaluation, None
@@ -172,6 +194,7 @@ class AlphaBetaSearch:
                 best_action = edge.action
 
             if alpha >= beta:
+                # print("beta cut!")
                 self.memo(node, beta, None)
                 node.edges.sort(key=self._cmp_edges, reverse=True)
                 return beta, None
@@ -219,7 +242,7 @@ class AlphaBetaSearch:
                 break
 
         size = sys.getsizeof(self.graph)
-        print(size)
+        # print(size)
         if size > 1024 * 1024 * 1024:
             print("clearing memory")
             self.graph.clear()
