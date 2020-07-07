@@ -109,11 +109,11 @@ class InternationalGame(Game):
         dst_r = dst.r
         dst_c = dst.c
         if src.piece is None:
-            return False
+            return False, None
         if dst.piece is not None:
-            return False
+            return False, None
         if abs(src_r - dst_r) != abs(src_c - dst_c):
-            return False
+            return False, None
         dir_r = (dst_r - src_r) // abs(src_r - dst_r)
         dir_c = (dst_c - src_c) // abs(src_c - dst_c)
         cur_r = src_r + dir_r
@@ -122,7 +122,7 @@ class InternationalGame(Game):
         piece = None
         while cur_r != dst_r:
             if self.grid[cur_r][cur_c].get_color() == src.get_color():
-                return False
+                return False, None
             if self.grid[cur_r][cur_c].piece is not None:
                 cnt += 1
                 piece = self.grid[cur_r][cur_c].piece
@@ -131,10 +131,10 @@ class InternationalGame(Game):
         if cnt == 1:
             for action in self.path:
                 if action.capture == piece:
-                    return False
-            return True
+                    return False, None
+            return True, piece
         else:
-            return False
+            return False, None
 
     """
         Check if the move is correct soldier walk or not.
@@ -515,6 +515,7 @@ class InternationalGame(Game):
             # iterate over all black pieces and get the moves from this pieces
             for piece in self.black_pieces:
                 if not piece.dead:
+
                     if self.can_capture(piece):
                         self.mx = 0
                         self.paths.clear()
@@ -571,9 +572,9 @@ class InternationalGame(Game):
             validated_actions.append(self._validate_action(action))
 
         for idx, action in enumerate(validated_actions):
-            self.apply_action(action)
             if idx == size - 1:
                 self.promote = True
+            self.apply_action(action)
 
         for action in validated_actions:
             if action.capture is not None:
