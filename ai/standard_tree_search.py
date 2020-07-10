@@ -6,7 +6,7 @@ from typing import Optional, List, Tuple
 
 from model.game import Game, MAXIMIZER
 from model.action import Action
-from .utils import GameState, evaluate
+from .utils import GameState
 
 
 class Node:
@@ -25,7 +25,7 @@ class Edge:
     def __init__(self, in_node: Node, out_node: Optional[Node], action: List[Action]):
         self.in_node = in_node
         self.out_node = out_node
-        self.stats = {'W': 0, 'N': 0}
+        self.stats = {'W': 0, 'N': 0, 'Q': 0.}
         self.action = action
 
 
@@ -64,7 +64,7 @@ class MCTree:
                     break
 
                 # Calculates the average of the rewards.
-                q = edge.stats['W'] / edge.stats['N']
+                q = edge.stats['Q']
 
                 # Calculates the upper confidence bound defined by the equation.
                 uct = q + sqrt(2 * log(nb) / edge.stats['N'])
@@ -75,6 +75,9 @@ class MCTree:
                     simulation_edge = edge
 
             path.append(simulation_edge)
+
+            # we add the virtual loss
+            simulation_edge.stats['Q'] = simulation_edge.stats['Q'] - 1
 
             # Traverse down the tree.
             current_node = simulation_edge.out_node
@@ -101,8 +104,8 @@ class MCTree:
                 direction = -1
 
             edge.stats['N'] += 1
-
             edge.stats['W'] += value * direction
+            edge.stats['Q'] = edge.stats['W'] / edge.stats['N']
 
     def expand(self, leaf: Node):
         """Adds the node children to the search tree.
@@ -133,11 +136,17 @@ class MCTree:
         game: Game = node.game_state.get_game()
 
         while not game.end():
-            paths = game.get_all_possible_actions()
+            paths = game.get_all_possible_paths()
             path = random.choice(paths)
             game.apply_turn(path)
 
-        value = evaluate(game)
+        winner = game.get_winner()
+        if winner == 0:
+            value = 0
+        elif winner == MAXIMIZER:
+            value = 1
+        else:
+            value = -1
 
         # We need to set the correct value of the evaluation as evaluate function
         # calculates it from maximizer point of view

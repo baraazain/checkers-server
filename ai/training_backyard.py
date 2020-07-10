@@ -5,6 +5,7 @@ from copy import deepcopy
 from typing import Optional
 
 import numpy as np
+import tensorflow as tf
 import tensorflow.keras as tk
 
 import ai.config as config
@@ -39,10 +40,63 @@ class TreeError(Exception):
         self.agent = agent
 
 
-# random.seed(101)
-# np.random.seed(101)
-# tf.random.set_seed(101)
+random.seed(101)
+np.random.seed(101)
+tf.random.set_seed(101)
 
+
+# def play_match(model: tk.models.Model,
+#                other_model: Optional[tk.models.Model] = None, turns_until_tau0=0):
+#     self_play = True if other_model is None else False
+#
+#     current_game = InternationalGame(1, None, None, None)
+#     sample_builder = ut.SampleBuilder()
+#
+#     current_game.init()
+#
+#     agent = AlphaZero(config.MCTS_SIMS)
+#
+#     if not self_play:
+#         other_agent = AlphaZero(config.MCTS_SIMS)
+#     else:
+#         other_agent = None
+#
+#     agent.build_mct(ut.GameState(deepcopy(current_game)), model)
+#
+#     if not self_play:
+#         other_agent.build_mct(ut.GameState(deepcopy(current_game)), other_model)
+#
+#     turn = 0
+#     while not current_game.end():
+#         if not self_play:
+#             current_agent = agent if current_game.current_turn == 1 else other_agent
+#         else:
+#             current_agent = agent
+#
+#         tau = 1 if turn < turns_until_tau0 else 0
+#
+#         try:
+#             path, state_stack, value, pi = current_agent.train_act(tau)
+#         except KeyError as e:
+#             raise TreeError(e.args[0], current_game, tau, agent, other_agent)
+#
+#         if state_stack.head is None:
+#             raise TreeError(None, current_game, tau, agent, other_agent)
+#
+#         current_game.apply_turn(path)
+#
+#         sample_builder.add_move(state_stack, pi)
+#
+#         current_agent.on_update(path)
+#
+#         if not self_play:
+#             other_agent.on_update(path)
+#
+#         turn += 1
+#
+#         print('*', end='' if turn % 20 != 0 else '\n')
+#
+#     print()
 
 def play_match(model: tk.models.Model,
                other_model: Optional[tk.models.Model] = None, turns_until_tau0=0):
@@ -66,6 +120,7 @@ def play_match(model: tk.models.Model,
         other_agent.build_mct(ut.GameState(deepcopy(current_game)), other_model)
 
     turn = 0
+    path = []
     while not current_game.end():
         if not self_play:
             current_agent = agent if current_game.current_turn == 1 else other_agent
@@ -82,7 +137,27 @@ def play_match(model: tk.models.Model,
         if not current_game.is_legal_action(action):
             raise RejectedActionError(action, current_game, tau, agent, other_agent)
 
-        current_game.apply_action(action)
+        path.append(action)
+
+        if flip_flag:
+            validated_actions = list(map(current_game.validate_action, path))
+
+            current_game.promote = True
+
+            current_game.apply_action(current_game.validate_action(action))
+
+            current_game.promote = False
+
+            for valid_action in validated_actions:
+                if valid_action.capture is not None:
+                    valid_action.capture.dead = 1
+                    valid_action.capture.cell.piece = None
+
+            current_game.current_turn = 3 - current_game.current_turn
+            path.clear()
+        else:
+            current_game.apply_action(current_game.validate_action(action))
+
         if state_stack.head is None:
             raise TreeError(None, current_game, tau, agent, other_agent)
         sample_builder.add_move(state_stack, pi)
@@ -94,9 +169,6 @@ def play_match(model: tk.models.Model,
 
         turn += 1
 
-        if flip_flag:
-            current_game.current_turn = 3 - current_game.current_turn
-
         print('*', end='' if turn % 20 != 0 else '\n')
 
     print()
@@ -105,12 +177,13 @@ def play_match(model: tk.models.Model,
 
     if winner == 1:
         winner = 'agent'
+        value = 1
     elif winner == 2:
         winner = 'other'
+        value = -1
     else:
         winner = 'draw'
-
-    value = ut.evaluate(current_game)
+        value = 0
 
     sample_builder.commit_sample(value, cgm.MAXIMIZER)
 

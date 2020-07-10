@@ -1,5 +1,4 @@
 from .grid import Cell
-from copy import deepcopy
 
 
 class Color:
@@ -17,7 +16,7 @@ class Piece:
         self.color = color
         self.type = _type
         self.cell = cell
-        self.dead = False
+        self.dead = dead
 
     @classmethod
     def from_dict(cls, dictionary):

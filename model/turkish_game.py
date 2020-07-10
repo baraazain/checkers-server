@@ -405,7 +405,7 @@ class TurkishGame(Game):
         @return all possible moves starting from given cell
     """
 
-    def get_all_possible_actions(self):
+    def get_all_possible_paths(self):
         actions = self.get_all_possible_captures()
         if not actions:
             actions = self.get_all_possible_walks()
@@ -564,7 +564,7 @@ class TurkishGame(Game):
             return False
         if self.current_turn == 2 and self.grid[r][c].get_color() != Color.BLACK:
             return False
-        action = self._validate_action(action)
+        action = self.validate_action(action)
         if self.correct_capture(action) or self.correct_walk(action):
             return True
         return False
@@ -572,7 +572,7 @@ class TurkishGame(Game):
     def apply_turn(self, actions: list):
         validated_actions = []
         for action in actions:
-            validated_actions.append(self._validate_action(action))
+            validated_actions.append(self.validate_action(action))
 
         piece = validated_actions[0].src.piece
 

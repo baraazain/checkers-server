@@ -27,7 +27,7 @@ class DummyAgent(Agent):
         super().__init__(0, "Dummy", None)
 
     def act(self, game):
-        actions = game.get_all_possible_actions()
+        actions = game.get_all_possible_paths()
         return random.choice(actions)
 
     def on_start(self, game):

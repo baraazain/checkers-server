@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 from .action import Action
 from .piece import *
@@ -69,12 +70,12 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def get_all_possible_actions(self):
+    def get_all_possible_paths(self):
         pass
 
     def get_all_possible_states(self):
         states = []
-        paths = self.get_all_possible_actions()
+        paths = self.get_all_possible_paths()
         for path in paths:
             new_state = deepcopy(self)
             new_state.apply_turn(path)
@@ -209,7 +210,7 @@ class Game(ABC):
         else:
             print("Draw -_-")
 
-    def _validate_action(self, action):
+    def validate_action(self, action):
         src: Cell = action.src
         dst: Cell = action.dst
         src: Cell = self.grid[src.r][src.c]

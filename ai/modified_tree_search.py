@@ -8,7 +8,7 @@ from tensorflow.keras.models import Model
 from model.action import Action
 from model.game import MAXIMIZER
 from .config import EPSILON, ALPHA, CPUCT
-from .utils import StateStack, evaluate, to_label, ActionEncoder, GameState, get_action_space
+from .utils import StateStack, to_label, ActionEncoder, GameState, get_action_space
 
 
 class Node:
@@ -87,6 +87,9 @@ class MCTree:
 
             path.append(simulation_edge)
 
+            # we add the virtual loss
+            simulation_edge.stats['Q'] = simulation_edge.stats['Q'] - 1
+
             # Traverse down the tree
             current_node = simulation_edge.out_node
 
@@ -155,13 +158,50 @@ class MCTree:
         game_state = leaf.game_state
 
         leaf_game = game_state.get_game()
+
         # In case of an End game state we evaluate the leaf directly
         if leaf_game.end():
-            evaluation = evaluate(game_state)
+            winner = leaf_game.get_winner()
+            if winner == 0:
+                evaluation = 0
+            elif winner == MAXIMIZER:
+                evaluation = 1
+            else:
+                evaluation = -1
             return evaluation if game_state.turn == MAXIMIZER else -evaluation
         else:
+            # possible_paths, possible_states = leaf.game_state.get_all_possible_states()
+            #
+            # labels = list(map(to_label, possible_paths))
+            #
+            # actions_ids = self.action_encoder.transform(labels)
+            #
+            # value, logits = self.get_predictions(state_stack)
+            #
+            # # Mask the illegal actions and remove their logits from the vector
+            # mask = np.ones_like(logits, dtype=bool)
+            # mask[actions_ids] = False
+            # # We set the value to -100 making e^Z[illegal neuron] ~ 0
+            # logits[mask] = -100
+            #
+            # # Applying softmax activation to get the probability vector
+            # probs = tf.nn.softmax(logits).numpy()
+            #
+            # # expanding phase
+            # for path, action_id, new_state in zip(possible_paths, actions_ids, possible_states):
+            #     # Check if the new state is already in the graph dictionary
+            #     try:
+            #         child = self.graph[new_state]
+            #     except KeyError:
+            #         child = Node(new_state)
+            #         self.graph[new_state] = child
+            #
+            #     leaf.edges[action_id] = Edge(leaf, child, path, action_id, probs[action_id])
+
             # expanding phase
-            paths = leaf_game.get_all_possible_actions()
+            paths = leaf_game.get_all_possible_paths()
+
+            old_nodes = set()
 
             for path in paths:
                 # for each path we are going to add all of the actions to the tree simultaneously
@@ -175,16 +215,30 @@ class MCTree:
                     action_id = self.action_encoder.transform([to_label(action)])[0]
                     game = current_state.get_game()
 
-                    game.apply_action(action)
+                    if flip_flag:
+                        validated_actions = list(map(game.validate_action, path))
+
+                        game.promote = True
+
+                        game.apply_action(game.validate_action(action))
+
+                        game.promote = False
+
+                        for valid_action in validated_actions:
+                            if valid_action.capture is not None:
+                                valid_action.capture.dead = 1
+                                valid_action.capture.cell.piece = None
+
+                        game.current_turn = 3 - game.current_turn
+                    else:
+                        game.apply_action(game.validate_action(action))
 
                     new_state = GameState(game)
-
-                    if flip_flag:
-                        new_state.turn = 3 - new_state.turn
 
                     # check if the child is already in the tree
                     try:
                         child = self.graph[new_state]
+                        old_nodes.add(child)
                     except KeyError:
                         child = Node(new_state)
                         self.graph[new_state] = child
@@ -203,6 +257,12 @@ class MCTree:
             def dfs(node: Node, current_state_stack):
                 if not node.edges:
                     return 0, -1
+
+                if node in old_nodes:
+                    ret = 0
+                    for edge in node.edges.values():
+                        ret += edge.stats['W']
+                    return ret, 0
 
                 vis.add(node.game_state)
 
@@ -239,6 +299,7 @@ class MCTree:
 
                     if edge.out_node.game_state not in vis:
                         ret_value, inc = dfs(edge.out_node, current_state_stack)
+
                         v_sum += ret_value
 
                         # update the edge statistics
@@ -271,6 +332,8 @@ class MCTree:
         # Search probabilities pi are returned proportional to N^(1/tau)
         pi = tf.math.pow(pi, 1 / max(0.01, tau))  # taking maximum to avoid division by zero and to prevent overflow
 
+        s = float(tf.math.reduce_sum(pi))
+
         # Normalize the vector to represent a probability vector
         pi = tf.math.divide(pi, tf.math.reduce_sum(pi)).numpy()
 
@@ -285,6 +348,8 @@ class MCTree:
 
         self.root = self.root.edges[action_id].out_node
 
+    # def __getitem__(self, item):
+    #     return self.root.edges[item].path
     def __getitem__(self, item):
         edge = self.root.edges[item]
         return edge.action, edge.flip_flag

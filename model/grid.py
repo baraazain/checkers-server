@@ -1,5 +1,4 @@
 from math import floor, log10
-from copy import deepcopy
 
 
 class Cell:
@@ -8,9 +7,6 @@ class Cell:
         self.r = r
         self.c = c
         self.piece = piece
-
-
-
 
     @classmethod
     def from_dict(cls, dictionary):
@@ -53,7 +49,6 @@ class Grid:
         self.m = m
         self.grid = [[Cell(i, j, None) for j in range(self.m)] for i in range(self.n)]
 
-
     @classmethod
     def from_dict(cls, dictionary):
         return cls(dictionary['n'], dictionary['m'])
@@ -72,6 +67,8 @@ class Grid:
                     ret += str.center(".", cnt_column + 1)
                 else:
                     color = self.grid[i][j].get_color()
+                    if self.grid[i][j].piece.type == "PAWN":
+                        color = str.lower(color)
                     ret += str.center(color[0], cnt_column + 1)
             ret += "\n"
         return ret

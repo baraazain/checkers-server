@@ -65,32 +65,6 @@ def get_action_space(board_size=10):
     return all_actions_list
 
 
-def evaluate(game):
-    """Calculates the value of the end game from the maximizer player point of view.
-
-    :param game:
-    :return: the value of the end game
-    :rtype: int
-    """
-
-    cnt = 0
-    for piece in game.white_pieces:
-        if piece.dead:
-            cnt += 1
-    if len(game.white_pieces) == cnt:
-        return -1
-
-    cnt = 0
-    for piece in game.black_pieces:
-        if piece.dead:
-            cnt += 1
-
-    if len(game.black_pieces) == cnt:
-        return 1
-
-    return 0
-
-
 def load_best_model() -> tk.models.Model:
     """loads the current version of AlphaZero model.
 
@@ -138,7 +112,7 @@ class GameState:
         return paths, ret
 
     def get_all_possible_paths(self):
-        return self.get_game().get_all_possible_actions()
+        return self.get_game().get_all_possible_paths()
 
     def get_player_turn(self):
         return self.turn
@@ -191,12 +165,19 @@ class StateStack:
 
                 color_idx = 0 if piece.color == Color.WHITE else 1
 
+                if piece.dead == -1:
+                    value = -1
+                elif piece.dead == 0:
+                    value = 1
+                else:
+                    value = 0
+
                 if piece.type == Type.KING:
                     # Mask the king pieces in (2, 4) planes for the (white, black) players respectively
-                    ret[row][column][color_idx + idx + 2] = 1
+                    ret[row][column][color_idx + idx + 2] = value
                 else:
                     # Mask the pawn pieces in (1, 3) planes for the (white, black) players respectively
-                    ret[row][column][color_idx + idx] = 1
+                    ret[row][column][color_idx + idx] = value
 
             # Mask the turn flag in the plane (5) of the turn planes
             ret[0][0][idx + 4] = state.turn

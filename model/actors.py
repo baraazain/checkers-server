@@ -43,7 +43,7 @@ class ConsolePlayer(Human):
         super().__init__(_id, name, password)
 
     def act(self, game):
-        paths = game.get_all_possible_actions()
+        paths = game.get_all_possible_paths()
         size = len(paths)
 
         for idx, path in enumerate(paths):
