@@ -40,9 +40,9 @@ class TreeError(Exception):
         self.agent = agent
 
 
-random.seed(101)
-np.random.seed(101)
-tf.random.set_seed(101)
+# random.seed(101)
+# np.random.seed(101)
+# tf.random.set_seed(101)
 
 
 # def play_match(model: tk.models.Model,
@@ -221,20 +221,24 @@ def fit(model, samples):
 
 
 def generate_data():
-    iteration = 0
+    iteration = 5
 
-    dataset = ut.SampleBuilder()
+    dataset = ut.SampleBuilder.load(iteration - 1, ''.join([ut.archive_folder, '/tmp']))
 
     current_NN = ut.load_best_model()
 
     while True:
-
+        s = 0
         for i in range(config.EPISODES):
             print(f'Episode {i + 1} started')
             start_time = time.monotonic()
             sb, _ = play_match(current_NN, turns_until_tau0=config.TURNS_UNTIL_TAU0)
             dataset.samples.extend(sb.samples)
-            print(f'Episode {i + 1} ended in {(time.monotonic() - start_time) / 60} minutes')
+            t = (time.monotonic() - start_time)
+            s += t
+            print(f'Episode {i + 1} ended in {t / 60} minutes')
+
+        print(f'Total time: {s / 60} minutes')
 
         size = len(dataset.samples)
         dataset.save(iteration, ''.join([ut.archive_folder, '/tmp']))

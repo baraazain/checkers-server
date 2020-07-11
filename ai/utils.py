@@ -162,7 +162,6 @@ class StateStack:
             for piece in pieces:
                 row = piece.cell.r
                 column = piece.cell.c
-
                 color_idx = 0 if piece.color == Color.WHITE else 1
 
                 if piece.dead == -1:
@@ -170,13 +169,13 @@ class StateStack:
                 elif piece.dead == 0:
                     value = 1
                 else:
-                    value = 0
+                    continue
 
                 if piece.type == Type.KING:
-                    # Mask the king pieces in (2, 4) planes for the (white, black) players respectively
+                    # Mask the king pieces in (3, 4) planes for the (white, black) players respectively
                     ret[row][column][color_idx + idx + 2] = value
                 else:
-                    # Mask the pawn pieces in (1, 3) planes for the (white, black) players respectively
+                    # Mask the pawn pieces in (1, 2) planes for the (white, black) players respectively
                     ret[row][column][color_idx + idx] = value
 
             # Mask the turn flag in the plane (5) of the turn planes

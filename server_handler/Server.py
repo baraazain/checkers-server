@@ -29,6 +29,7 @@ async def player_connect(sid, player):
 @sio.event
 async def connect(sid, environ):
     print('connected: ', sid)
+    await sio.emit('message', 'fuck')
 #   await sio.emit("login", room=sid)
 
 
@@ -41,6 +42,8 @@ async def message(sid, data):
 async def json_message(sid, data):
     s = json.loads(data)
     print(s)
+    print('json data as a python object')
+    print(Piece.from_dict(s))
     print('json data as a python object')
     print(Piece.from_dict(s))
 

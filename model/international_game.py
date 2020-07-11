@@ -32,12 +32,12 @@ class InternationalGame(Game):
                 j = 0
                 for c in line:
                     if c != ' ':
-                        if c == 'B':
-                            piece = Piece(game.grid[i][j], Type.PAWN, Color.BLACK)
+                        if c == 'B' or c == 'b':
+                            piece = Piece(game.grid[i][j], Type.PAWN if c == 'b' else Type.KING, Color.BLACK)
                             game.grid[i][j].piece = piece
                             game.black_pieces.append(piece)
-                        if c == 'W':
-                            piece = Piece(game.grid[i][j], Type.PAWN, Color.WHITE)
+                        if c == 'W' or c == 'w':
+                            piece = Piece(game.grid[i][j], Type.PAWN if c == 'w' else Type.KING, Color.WHITE)
                             game.grid[i][j].piece = piece
                             game.white_pieces.append(piece)
                         j += 1
@@ -124,7 +124,7 @@ class InternationalGame(Game):
             if self.grid[cur_r][cur_c].get_color() == src.get_color():
                 return False, None
             if self.grid[cur_r][cur_c].piece is not None:
-                if self.grid[cur_r][cur_c].piece.dead != 0:
+                if self.grid[cur_r][cur_c].piece.dead == 0:
                     cnt += 1
                     piece = self.grid[cur_r][cur_c].piece
             cur_r += dir_r
@@ -204,7 +204,7 @@ class InternationalGame(Game):
         if middle_cell.get_color() == src.get_color():
             return False, None
 
-        if middle_cell.piece.dead != 0:
+        if middle_cell.piece.dead == 0:
             return False, None
 
         return True, middle_cell.piece
