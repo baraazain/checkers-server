@@ -1,3 +1,7 @@
+import datetime
+
+from ai.agent import MonteCarloAgent
+from model.international_game import InternationalGame
 from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
 from server_handler.auth_handler import *
@@ -29,8 +33,18 @@ async def player_connect(sid, player):
 @sio.event
 async def connect(sid, environ):
     print('connected: ', sid)
-    await sio.emit('message', 'fuck')
-#   await sio.emit("login", room=sid)
+    game = InternationalGame(1, ConsolePlayer(1, "", ""), MonteCarloAgent(0.3), datetime.datetime.now())
+    game.init()
+
+    # class fuck:
+    #     def __init(self):
+    #         self.fuck1 = game.white_pieces
+    #         self.fuck2 = game.black_pieces
+
+    await sio.emit("fuck", to_json(game), to=sid)
+
+
+# await sio.emit("login", room=sid)
 
 
 @sio.event
@@ -59,6 +73,8 @@ async def json_message1(sid, data):
 @sio.event
 async def disconnect(sid):
     print('disconnected: ', sid)
+
+
 #    player = get_player_by_sid(sid, all_player_connecting)
 #    del all_player_connecting[player.name]
 

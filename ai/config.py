@@ -1,5 +1,5 @@
 # Training settings
-CURRENT_VERSION = None
+CURRENT_VERSION = 1
 
 # ========================= HYPERPARAMETERS ===============================
 

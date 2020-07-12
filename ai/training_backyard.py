@@ -221,9 +221,10 @@ def fit(model, samples):
 
 
 def generate_data():
-    iteration = 5
+    iteration = 7
 
     dataset = ut.SampleBuilder.load(iteration - 1, ''.join([ut.archive_folder, '/tmp']))
+    # dataset = ut.SampleBuilder()
 
     current_NN = ut.load_best_model()
 

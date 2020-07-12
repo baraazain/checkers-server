@@ -204,7 +204,7 @@ class InternationalGame(Game):
         if middle_cell.get_color() == src.get_color():
             return False, None
 
-        if middle_cell.piece.dead == 0:
+        if middle_cell.piece.dead != 0:
             return False, None
 
         return True, middle_cell.piece

@@ -67,7 +67,7 @@ class RemotePlayer(Human):
 
     @classmethod
     def from_dict(cls, data):
-        return cls(None, data['id'], data['name'], data['password'])
+        return cls(None, data['_id'], data['name'], data['password'])
 
     def act(self, game):
         pass
