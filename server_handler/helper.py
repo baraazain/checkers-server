@@ -1,3 +1,4 @@
+import os
 import pickle
 
 
@@ -32,9 +33,23 @@ def get_game_by_id(_id):
     return None
 
 
+def get_contest_by_id(_id):
+    contests = load_contest()
+    for contest in contests:
+        if contest.id == _id:
+            return contest
+    return None
+
+
 def load_players():
     with open('../players.dat', 'rb') as file:
-        return pickle.load(file)
+        if os.path.getsize('../players.dat') == 0:
+            print('File is  empty')
+            return []
+        else:
+            print('File is not empty')
+            players: list = pickle.load(file)
+            return sorted(players, key=lambda x: x.id)
 
 
 def save_players(players):
@@ -44,7 +59,8 @@ def save_players(players):
 
 def load_games():
     with open('../games.dat', 'rb') as file:
-        return pickle.load(file)
+        games = pickle.load(file)
+        return games.sort(key=lambda x: x.id)
 
 
 def save_games(games):
@@ -54,9 +70,51 @@ def save_games(games):
 
 def load_contest():
     with open('../contest.dat', 'rb') as file:
-        return pickle.load(file)
+        if os.path.getsize('../contest.dat') == 0:
+            print('File is  empty')
+            return []
+        else:
+            print('File is not empty')
+            contests: list = pickle.load(file)
+            return sorted(contests, key=lambda x: x.id)
 
 
 def save_contest(contests):
     with open('../contest.dat', 'wb') as file:
         pickle.dump(contests, file)
+
+
+def print_players():
+    with open('../players.dat', 'rb') as file:
+        if os.path.getsize('../players.dat') == 0:
+            print('File is  empty')
+            return []
+        else:
+            print('File is not empty')
+            players: list = pickle.load(file)
+            p = sorted(players, key=lambda x: x.id)
+            for i in p:
+                print(i.id, i.name, i.password)
+
+
+def print_contests():
+    with open('../contest.dat', 'rb') as file:
+        if os.path.getsize('../contest.dat') == 0:
+            print('File is  empty')
+            return []
+        else:
+            print('File is not empty')
+            contests: list = pickle.load(file)
+            c = sorted(contests, key=lambda x: x.id)
+            for i in c:
+                print(i.id, i.name, i.date, i.mode)
+
+
+def remove_players():
+    with open('../players.dat', 'wb') as file:
+        pickle.dump([], file)
+
+
+def remove_contests():
+    with open('../contest.dat', 'wb') as file:
+        pickle.dump([], file)
