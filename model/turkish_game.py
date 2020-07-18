@@ -99,9 +99,9 @@ class TurkishGame(Game):
         return True
 
     """
-        Check if the move is correct king eat or not.
+        Check if the move is correct king capture or not.
         @param move the move to check.
-        @return true if correct king eat and false otherwise.
+        @return true if correct king capture and false otherwise.
     """
 
     def correct_king_capture(self, action: Action):
@@ -120,21 +120,21 @@ class TurkishGame(Game):
         if src_r == dst_r:
             dir_r = 0
             dir_c = (dst_c - src_c) // abs(src_c - dst_c)
-            # if self.path:
-            #     prv = self.path[len(self.path) - 1]
-            #     if prv.src.r == prv.dst.r:
-            #         prv_dir = (prv.dst.c - prv.src.c) // abs(prv.src.c - prv.dst.c)
-            #         if prv_dir != dir_c:
-            #             return False
+            if self.path:
+                prv = self.path[len(self.path) - 1]
+                if prv.src.r == prv.dst.r:
+                    prv_dir = (prv.dst.c - prv.src.c) // abs(prv.src.c - prv.dst.c)
+                    if prv_dir != dir_c:
+                        return False
         else:
             dir_r = (dst_r - src_r) // abs(src_r - dst_r)
             dir_c = 0
-            # if self.path:
-            #     prv = self.path[len(self.path) - 1]
-            #     if prv.src.c == prv.dst.c:
-            #         prv_dir = (prv.dst.r - prv.src.r) // abs(prv.src.r - prv.dst.r)
-            #         if prv_dir != dir_r:
-            #             return False
+            if self.path:
+                prv = self.path[len(self.path) - 1]
+                if prv.src.c == prv.dst.c:
+                    prv_dir = (prv.dst.r - prv.src.r) // abs(prv.src.r - prv.dst.r)
+                    if prv_dir != dir_r:
+                        return False
 
         cur_r = src_r + dir_r
         cur_c = src_c + dir_c
@@ -192,9 +192,9 @@ class TurkishGame(Game):
         return False
 
     """
-        Check if the move is correct soldier eat or not.
+        Check if the move is correct soldier capture or not.
         @param move the move to check.
-        @return true if correct pawn eat and false otherwise.
+        @return true if correct pawn capture and false otherwise.
     """
 
     def correct_capture(self, action: Action):
@@ -210,9 +210,9 @@ class TurkishGame(Game):
             return False
         if dst.piece is not None:
             return False
-        if not(src_r - dst_r == 0 and abs(src_c - dst_c) == 2):
+        if not (src_r - dst_r == 0 and abs(src_c - dst_c) == 2):
             if src.get_color() == Color.WHITE:
-                if not(src_r - dst_r == 2 and src_c - dst_c == 0):
+                if not (src_r - dst_r == 2 and src_c - dst_c == 0):
                     return False
             elif src.get_color() == Color.BLACK:
                 if not (src_r - dst_r == -2 and src_c - dst_c == 0):
@@ -226,18 +226,18 @@ class TurkishGame(Game):
         if middle_cell.get_color() == src.get_color():
             return False
 
-        # if self.path:
-        #     prv: Action = self.path[len(self.path) - 1]
-        #     if dst_c == src_c and prv.dst.c == prv.src.c:
-        #         dir_r = dst_r - src_r
-        #         prv_dir = prv.dst.r - prv.src.r
-        #         if dir_r != prv_dir:
-        #             return False
-        #     if dst_r == src_r and prv.dst.r == prv.src.r:
-        #         dir_c = dst_c - src_c
-        #         prv_dir = prv.dst.c - prv.src.c
-        #         if dir_c != prv_dir:
-        #             return False
+        if self.path:
+            prv: Action = self.path[len(self.path) - 1]
+            if dst_c == src_c and prv.dst.c == prv.src.c:
+                dir_r = dst_r - src_r
+                prv_dir = prv.dst.r - prv.src.r
+                if dir_r != prv_dir:
+                    return False
+            if dst_r == src_r and prv.dst.r == prv.src.r:
+                dir_c = dst_c - src_c
+                prv_dir = prv.dst.c - prv.src.c
+                if dir_c != prv_dir:
+                    return False
 
         return True
 
@@ -286,9 +286,9 @@ class TurkishGame(Game):
         return False
 
     """
-        Check if piece can eat horizontal diagonal.
+        Check if piece can capture horizontal diagonal.
         @param piece the piece to check.
-        @return true if can eat horizontal and false otherwise.
+        @return true if can capture horizontal and false otherwise.
     """
 
     def can_capture_horizontal(self, piece: Piece):
@@ -308,9 +308,9 @@ class TurkishGame(Game):
         return False
 
     """
-        Check if piece can eat vertical diagonal.
+        Check if piece can capture vertical diagonal.
         @param piece the piece to check.
-        @return true if can eat vertical and false otherwise.
+        @return true if can capture vertical and false otherwise.
     """
 
     def can_capture_vertical(self, piece: Piece):
@@ -379,17 +379,16 @@ class TurkishGame(Game):
             dst = self.grid[st_r][st_c]
             action = Action(src, dst, current_player)
             if self.correct_walk(action):
-
                 actions.append(action)
             # next cell in the vertical diagonal is (i+1, j-1)
             st_r += 1
         return actions
 
     """
-        calc all possible eats in the horizontal diagonal for a given
+        calc all possible captures in the horizontal diagonal for a given
         piece for a given player
         @param piece the given piece
-        @param cur_rentPlayer the given player
+        @param current_player the given player
         @return List of moves
     """
 
@@ -407,7 +406,7 @@ class TurkishGame(Game):
         return actions
 
     """
-        calc all possible eats in the vertical diagonal for a given
+        calc all possible captures in the vertical diagonal for a given
         piece for a given player
         @param piece the given piece
         @param cur_rentPlayer the given player
@@ -484,7 +483,7 @@ class TurkishGame(Game):
 
         return self.mx, self.paths
 
-    # @return all possible eats from cur_rent states
+    # @return all possible captures from cur_rent states
     def get_all_possible_captures(self):
         actions_value_pairs = []
         if self.current_turn == 1:
@@ -515,6 +514,7 @@ class TurkishGame(Game):
                 captures.extend(path)
 
         return captures
+
     """      
         implements king's move
         @param move the king's move
@@ -557,10 +557,10 @@ class TurkishGame(Game):
             cur: Cell = self.grid[curR][curC]
             """ 
                 if we get reach to non-empty piece, so we need to erase it from
-                the board (eat case)
+                the board (capture case)
             """
             if cur.piece is not None:
-                action.eat = cur.piece
+                action.capture = cur.piece
                 cur.piece.dead = True
                 # self.removePiece(cur.piece)
                 cur.piece = None
@@ -643,7 +643,7 @@ class TurkishGame(Game):
         """
             we get the middle cell between src and dst, in case of WALK the
             middle cell will be either the src cell or dst cell, in case of EAT 
-            the middle cell will be the eaten cell
+            the middle cell will be the captureen cell
         """
         middle_r = (src_r + dst_r) // 2
         middle_c = (src_c + dst_c) // 2

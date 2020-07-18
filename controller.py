@@ -58,7 +58,7 @@ async def start_game():
     while not game.end():
         print(game.grid)
         path = game.get_current_player().act(game)
-        print(''.join(list(map(str, path))))
+        # print(''.join(list(map(str, path))))
         game.apply_turn(path)
         # game.player1.on_update(path)
         # game.player2.on_update(path)
