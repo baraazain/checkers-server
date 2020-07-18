@@ -3,64 +3,58 @@ import json
 from server_handler.helper import *
 
 
-def signup_handle(player):
-    player = RemotePlayer().from_dict(json.loads(player))
+def signup_handle(playerx):
+    player = RemotePlayer.from_dict(json.loads(playerx))
     players: list = load_players()
-    state = False
     for user in players:
         if player.name == user.name:
-            state = True
+            return None
 
-    if not state:
-        p = RemotePlayer()
-        p.name = player.name
-        p.password = player.password
-        players.append(p)
-        save_players(players)
-        return True
+    if len(players) == 0:
+        new_id = 1
     else:
-        return False
+        new_id = players[len(players) - 1].id + 1
+
+    p = RemotePlayer(0, new_id, player.name, player.password)
+    players.append(p)
+    save_players(players)
+    return p
 
 
-def login_handle(player):
-    player = RemotePlayer().from_dict(json.loads(player))
+def login_handle(playerx):
+    player = RemotePlayer.from_dict(json.loads(playerx))
     players: list = load_players()
-    state = False
     for user in players:
         if player.name == user.name and player.password == user.password:
-            state = True
-    return state
+            return user
+    return None
 
 
-def update_account_handle(playerx):
-    player = RemotePlayer().from_dict(json.loads(playerx))
+def update_account_handle(p,playerx):
+    player = RemotePlayer.from_dict(json.loads(playerx))
     players = load_players()
-    state = False
     for user in players:
-        if user.name == player.name:
-            state = True
+        if user.name == p.name and user.password== p.password:
             user.name = player.name
             user.password = player.password
-    save_players(players)
-    return state
+            save_players(players)
+            return user
+    return None
 
 
-def remove_account_handle(playerx):
-    player = RemotePlayer().from_dict(json.loads(playerx))
+def remove_account_handle(player):
     players: list = load_players()
-    state = False
     for user in players:
-        if user.name == player.name:
+        if user.name == player.name and user.password==player.password:
             players.remove(user)
-            state = True
-    save_players(players)
-    return state
+            save_players(players)
+            return True
+    return False
 
 
-def show_account_handle(playerx):
-    player = RemotePlayer().from_dict(json.loads(playerx))
+def show_account_handle(player):
     players = load_players()
     for user in players:
-        if user.name == player.name:
+        if user.name == player.name and user.password==player.password:
             return user
     return None

@@ -10,7 +10,9 @@ class Player(ABC):
         self.name = name
         self.password = password
         self.rate = 1000
+        self.games_id_saved = []
         self.currentContest = []
+        self.contest_id_finished = []
 
     @abstractmethod
     def act(self, game) -> Action:
