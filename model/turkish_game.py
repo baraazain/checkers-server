@@ -32,12 +32,12 @@ class TurkishGame(Game):
                 j = 0
                 for c in line:
                     if c != ' ':
-                        if c == 'B':
-                            piece = Piece(game.grid[i][j], Type.PAWN, Color.BLACK)
+                        if c == 'B' or c == 'b':
+                            piece = Piece(game.grid[i][j], Type.PAWN if c == 'b' else Type.KING, Color.BLACK)
                             game.grid[i][j].piece = piece
                             game.black_pieces.append(piece)
-                        if c == 'W':
-                            piece = Piece(game.grid[i][j], Type.PAWN, Color.WHITE)
+                        if c == 'W' or c == 'w':
+                            piece = Piece(game.grid[i][j], Type.PAWN if c == 'w' else Type.KING, Color.WHITE)
                             game.grid[i][j].piece = piece
                             game.white_pieces.append(piece)
                         j += 1
@@ -120,9 +120,22 @@ class TurkishGame(Game):
         if src_r == dst_r:
             dir_r = 0
             dir_c = (dst_c - src_c) // abs(src_c - dst_c)
+            # if self.path:
+            #     prv = self.path[len(self.path) - 1]
+            #     if prv.src.r == prv.dst.r:
+            #         prv_dir = (prv.dst.c - prv.src.c) // abs(prv.src.c - prv.dst.c)
+            #         if prv_dir != dir_c:
+            #             return False
         else:
             dir_r = (dst_r - src_r) // abs(src_r - dst_r)
             dir_c = 0
+            # if self.path:
+            #     prv = self.path[len(self.path) - 1]
+            #     if prv.src.c == prv.dst.c:
+            #         prv_dir = (prv.dst.r - prv.src.r) // abs(prv.src.r - prv.dst.r)
+            #         if prv_dir != dir_r:
+            #             return False
+
         cur_r = src_r + dir_r
         cur_c = src_c + dir_c
         cnt = 0
@@ -202,7 +215,7 @@ class TurkishGame(Game):
                 if not(src_r - dst_r == 2 and src_c - dst_c == 0):
                     return False
             elif src.get_color() == Color.BLACK:
-                if not(src_r - dst_r == -2 and src_c - dst_c == 0):
+                if not (src_r - dst_r == -2 and src_c - dst_c == 0):
                     return False
 
         middle_r = (src_r + dst_r) // 2
@@ -212,6 +225,20 @@ class TurkishGame(Game):
             return False
         if middle_cell.get_color() == src.get_color():
             return False
+
+        # if self.path:
+        #     prv: Action = self.path[len(self.path) - 1]
+        #     if dst_c == src_c and prv.dst.c == prv.src.c:
+        #         dir_r = dst_r - src_r
+        #         prv_dir = prv.dst.r - prv.src.r
+        #         if dir_r != prv_dir:
+        #             return False
+        #     if dst_r == src_r and prv.dst.r == prv.src.r:
+        #         dir_c = dst_c - src_c
+        #         prv_dir = prv.dst.c - prv.src.c
+        #         if dir_c != prv_dir:
+        #             return False
+
         return True
 
     """
@@ -540,10 +567,6 @@ class TurkishGame(Game):
                 break
             curR += dirR
             curC += dirC
-        if action.capture is not None and self.can_capture(self.grid[dst.r][dst.c].piece):
-            return
-        self.current_turn = 3 - self.current_turn
-        # self.actions.append(action)
 
     """     
         @param move the move needs to implement
