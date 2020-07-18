@@ -53,7 +53,7 @@ class MonteCarloAgent(Agent):
     def on_update(self, action):
         self.mct.update_root(action)
 
-    def act(self, game):
+    def act(self, game) -> List[Action]:
 
         start_time = time.monotonic()
         while time.monotonic() - start_time < self.simulations_limit:

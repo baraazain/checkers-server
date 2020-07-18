@@ -4,7 +4,7 @@ import time
 from typing import Optional, List, Dict
 
 from model.action import Action
-from model.game import MAXIMIZER
+from model.game import MAXIMIZER, Game
 from model.piece import Type
 from .utils import GameState
 
@@ -255,3 +255,7 @@ class AlphaBetaSearch:
             print("clearing memory")
             self.graph.clear()
             self.root = Node(self.root.game_state)
+
+
+def hint(game: Game) -> List[Action]:
+    return AlphaBetaSearch(GameState(game), pov=1 if game.current_turn == MAXIMIZER else 2, timeout=3).get_best_action()

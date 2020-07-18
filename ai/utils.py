@@ -222,7 +222,7 @@ class ActionEncoder(LabelEncoder):
 
 class SampleBuilder:
     def __init__(self):
-        self.samples = deque(maxlen=100000)
+        self.samples = deque(maxlen=21000)
         self.moves = []
 
     def add_move(self, state_stack: StateStack, pi: np.array):

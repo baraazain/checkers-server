@@ -1,15 +1,15 @@
+import asyncio
 import datetime
+
+import socketio
+from aiohttp import web
 
 from ai.agent import MonteCarloAgent
 from model.international_game import InternationalGame
-from server_handler.ResponseResult import Result
-from server_handler.game_handller import *
-from server_handler.auth_handler import *
-from model.actors import *
 from model.utils import *
-from aiohttp import web
-import socketio
-import json
+from server_handler.ResponseResult import Result
+from server_handler.auth_handler import *
+from server_handler.game_handller import *
 
 sio = socketio.AsyncServer()
 app = web.Application()
@@ -30,18 +30,41 @@ async def player_connect(sid, player):
     all_player_connecting[player.name].sid = player.sid
 
 
+async def start_game(sid):
+    game = InternationalGame(1, None, None, datetime.datetime.now())
+    game.init()
+    await sio.emit('start_game', to_json(game), to=sid)
+    player2 = MonteCarloAgent(0.3)
+    player2.on_start(game)
+    player1 = RemotePlayer(sid, _id=-1, name='', password='')
+    event = asyncio.Event()
+
+    @sio.on(f"act{game.id}")
+    async def act(sid, data):
+        paths = game.get_all_possible_paths()
+        path = paths[int(data)]
+        game.apply_turn(path)
+        await sio.emit('update_game', to_json(game), to=sid)
+        # player1.on_update(action)
+        player2.on_update(path)
+        event.set()
+
+    while not game.end():
+        if game.current_turn == 2:
+            action = player2.act(game)
+            game.apply_turn(action)
+            player2.on_update(action)
+            await sio.emit('update_game', to_json(game), to=sid)
+        else:
+            await sio.emit('act', to_json(game.get_all_possible_paths()))
+            await event.wait()
+
+
 @sio.event
 async def connect(sid, environ):
     print('connected: ', sid)
-    game = InternationalGame(1, ConsolePlayer(1, "", ""), MonteCarloAgent(0.3), datetime.datetime.now())
-    game.init()
-
-    # class fuck:
-    #     def __init(self):
-    #         self.fuck1 = game.white_pieces
-    #         self.fuck2 = game.black_pieces
-
-    await sio.emit("fuck", to_json(game), to=sid)
+    ls = [(i, i + 1) for i in range(10)]
+    await sio.emit('end_game', to_json(ls))
 
 
 # await sio.emit("login", room=sid)
@@ -50,24 +73,6 @@ async def connect(sid, environ):
 @sio.event
 async def message(sid, data):
     print(sid, 'say: ', data)
-
-
-@sio.event
-async def json_message(sid, data):
-    s = json.loads(data)
-    print(s)
-    print('json data as a python object')
-    print(Piece.from_dict(s))
-    print('json data as a python object')
-    print(Piece.from_dict(s))
-
-
-@sio.event
-async def json_message1(sid, data):
-    s = json.loads(data)
-    print(s)
-    print('json data as a python object')
-    print(RemotePlayer.from_dict(s))
 
 
 @sio.event
