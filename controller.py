@@ -24,6 +24,8 @@ def main():
     game.init()
     game.player1.on_start(game)
     game.player2.on_start(game)
+    print(game.grid)
+
     while not game.end():
         print(game.grid)
         path = game.get_current_player().act(game)

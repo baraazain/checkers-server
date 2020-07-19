@@ -1,3 +1,6 @@
+from model.game import *
+from server_handler.Request import FirstButtonRequest, SecondButtonRequest, IdRequest
+
 from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
 from server_handler.auth_handler import *
@@ -134,7 +137,7 @@ async def save(sid, _id):
 
 @sio.on('show_games_saved')
 async def show_games_saved(sid):
-    player = get_player_by_sid(sid)
+    player = get_player_by_sid(sid, all_player_connecting)
     res = show_games_save_handle(player)
     if res is not None:
         result = Result(True, 'successful', res)
@@ -154,6 +157,128 @@ async def load(sid, _id):
     else:
         result = Result(False, "n't load this game", None)
         await sio.emit("load", to_json(result))
+
+
+@sio.on('get_possible_moves')
+async def get_possible_moves(sid, data):
+    data = FirstButtonRequest.from_dict(json.loads(data))
+
+    _id = data.id
+    r = data.r
+    c = data.c
+
+    game = get_game_by_sid(_id, all_game_playing)
+    # game.init()
+    print(game.grid)
+    piece = game.grid[r][c].piece
+
+    print(piece)
+    res = get_possible_moves_handle(game, piece)
+
+    print("Start Paths")
+    for path in res :
+        print("\tStart Path")
+        for (r, c) in path:
+            print("\t\t{", r, ",", c, "}")
+        print("\tEnd Path")
+    print("End Paths")
+
+    if res is not None:
+        result = Result(True, 'successful', res)
+        await sio.emit("get_possible_moves", to_json(result))
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("get_possible_moves", to_json(result))
+
+
+@sio.on('apply_action')
+async def apply_action(sid, data):
+    data = json.loads(data)
+    data = SecondButtonRequest.from_dict(data)
+
+    _id = data.id
+    pairs = data.path
+
+    game = get_game_by_sid(_id, all_game_playing)
+    # game.init()
+    # print("HEEREEE: ")
+    # print(game.grid)
+    #
+    # print("PATHHHHH: ")
+    # for (r, c) in pairs:
+    #     print(r, c)
+    # print("ENDDDD")
+
+    path = get_path(game, pairs)
+
+    print("Start")
+    for action in path:
+        print(action)
+    print("end")
+
+    res = apply_action_handle(game, path)
+    # print(res)
+
+    if res is not None:
+        result = Result(True, 'successful', res)
+        await sio.emit("apply_action", to_json(result))
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("apply_action", to_json(result))
+
+
+@sio.on('undo')
+async def undo(sid, data):
+    data = IdRequest.from_dict(json.loads(data))
+    _id = data.id
+
+    game = get_game_by_sid(_id, all_game_playing)
+
+    print(game.grid)
+    res = undo_handle(game)
+    print(res.grid)
+
+    if res is not None:
+        result = Result(True, 'successful', res)
+        await sio.emit("undo", to_json(result))
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("undo", to_json(result))
+
+
+@sio.on('create_new_game')
+async def create_new_game(sid, data):
+    player = get_player_by_sid(sid, all_player_connecting)
+    data = json.loads(data)
+    game_info = GameInfo.from_dict(data)
+    res = create_new_game_handle(game_info, all_game_playing, player)
+
+    if res is not None:
+        all_game_playing[res.id] = res
+        result = Result(True, 'successful', res)
+        await sio.emit("create_new_game", to_json(result), room=sid)
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("create_new_game", to_json(result), room=sid)
+
+
+@sio.on('initialize_game')
+async def initialize_game(sid, data):
+    data = json.loads(data)
+    data = IdRequest.from_dict(data)
+
+    _id = data.id
+    game = get_game_by_sid(_id, all_game_playing)
+
+    res = initialize_game_handle(game)
+
+    if res is not None:
+        all_game_playing[res.id] = res
+        result = Result(True, 'successful', res)
+        await sio.emit("initialize_game", to_json(result), room=sid)
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("initialize_game", to_json(result), room=sid)
 
 
 if __name__ == '__main__':

@@ -3,14 +3,10 @@ from copy import deepcopy
 
 
 class Cell:
-
     def __init__(self, r, c, piece):
         self.r = r
         self.c = c
         self.piece = piece
-
-
-
 
     @classmethod
     def from_dict(cls, dictionary):
