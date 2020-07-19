@@ -446,6 +446,16 @@ class InternationalGame(Game):
         @param src
         @return all possible moves starting from given cell
     """
+    def get_all_possible_actions_from_piece(self, piece: Piece):
+        paths = self.get_all_possible_actions()
+
+        actions = []
+        for path in paths:
+            first_action = path[0]
+            if first_action.src.piece == piece:
+                actions.append(path)
+
+        return actions
 
     def get_all_possible_paths(self):
         actions = self.get_all_possible_captures()

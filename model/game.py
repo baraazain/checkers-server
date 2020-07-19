@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 
 from .action import Action
+from .actors import Player
 from .piece import *
 
 # Constants
@@ -11,6 +12,24 @@ MAXIMIZER = 1
 class Mode:
     INTERNATIONAL = "INTERNATIONAL"
     TURKISH = "TURKISH"
+
+
+class Level:
+    HUMAN = "HUMAN"
+    DUMMY = "DUMMY"
+    ALPHA_BETA = "ALPHA_BETA"
+    MONTE_CARLO = "MONTE_CARLO"
+    ALPHA_ZERO = "ALPHA_ZERO"
+
+
+class GameInfo:
+    def __init__(self, mode, level):
+        self.mode = mode
+        self.level = level
+
+    @classmethod
+    def from_dict(cls, data):
+        return GameInfo(**data)
 
 
 class Game(ABC):
