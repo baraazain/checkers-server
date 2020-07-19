@@ -1,5 +1,5 @@
-import asyncio
-import datetime
+import copy
+from typing import List
 
 from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
@@ -15,10 +15,11 @@ app = web.Application()
 sio.attach(app)
 
 all_player_connecting = {}
+all_current_contests = {}
 
 
 @sio.event
-async def connect(sid, environ):
+async def connect(sid):
     print('connected: ', sid)
 
 
@@ -57,7 +58,7 @@ async def login(sid, player):
 
 @sio.event
 async def update_account(sid, update_player):
-    p: RemotePlayer = update_account_handle(get_player_by_sid(sid), update_player)
+    p: RemotePlayer = update_account_handle(get_player_by_sid(sid, all_player_connecting), update_player)
     p.sid = sid
     if p is not None:
         all_player_connecting[p.id] = p
@@ -92,45 +93,60 @@ async def show_account(sid):
         await sio.emit("show_account_result", to_json(result))
 
 
-async def manage_contest(contest: Contest):
-    await sio.emit("notify_round_participants", "test", room=contest.id)
+async def manage_contest(contest: Contest, players: List[RemotePlayer]):
     contest.distribute()
     if contest.is_end():
         winner: Player = contest.participants[0]
         print("The Winner is: " + winner.name + " " + winner.id)
+        result = Result(True, 'winner in contest', winner)
+        for player in players:
+            await sio.emit("contest_end", "the winner is:", to_json(result), to=all_player_connecting[player.id])
         return
-
-    @sio.on(f"ababa_{contest.id}")
-    async def disqualify(sid, data):
-        pass
 
     contest.current_game = 0
     while not contest.is_round_end():
         game = contest.games[contest.current_game]
-        game.start_game()
-        contest.current_game += 1
-        # game.start_game(self)
+        result = Result(True, "start game", None)
+        await sio.emit("notify_game_contest_start", to_json(result),
+                       to=all_player_connecting[game.player1.id].sid)
+        await sio.emit("notify_game_contest_start", to_json(result),
+                       to=all_player_connecting[game.player2.id].sid)
+        # zaher request handle
+        # await start_game(game)
 
-        # remove losers from contest room
+        win = game.get_winner()
+        if win == 1:
+            winner = all_player_connecting[game.player1.id].sid
+            loser = all_player_connecting[game.player2.id].sid
+        else:
+            winner = all_player_connecting[game.player2.id].sid
+            loser = all_player_connecting[game.player1.id].sid
+        result_loser = Result(True, "you are lose the game", None)
+        result_winner = Result(True, "you are win the game", None)
+        await sio.emit("game_contest_result", to_json(result_winner), to=winner)
+        await sio.emit("game_contest_result", to_json(result_loser), to=loser)
+        contest.current_game += 1
+
     contest.participants = contest.get_qualified_players()
-    await manage_contest(contest)
+    await manage_contest(contest, players)
 
 
 async def start_contest(contest):
-    await sio.emit('create_contest')
-    await manage_contest(contest)
+    del all_current_contests[contest.id]
+    await manage_contest(contest, copy.deepcopy(contest.participants))
 
 
 @sio.event
 async def create_contest(sid, form):
     contest = create_contest_handler(form)
     if contest:
+        all_current_contests[contest.id] = contest
         asyncio.create_task(run_at(contest.date, start_contest(contest)))
-        result = Result(True, "successful", contest)
-        await sio.emit("create_contest_result", to_json(result))
+        result = Result(True, "successful", None)
+        await sio.emit("create_contest_result", to_json(result), sid)
     else:
         result = Result(False, "can not create contest try again", None)
-        await sio.emit("create_contest_result", to_json(result))
+        await sio.emit("create_contest_result", to_json(result), to=sid)
 
 
 @sio.event
@@ -138,23 +154,22 @@ async def join_player_to_contest(sid, _id):
     player = get_player_by_sid(sid, all_player_connecting)
     res = join_player_to_contest_handler(_id, player)
     if res:
-        sio.enter_room(sid, id)
         result = Result(True, "successful", res)
-        await sio.emit("join_player_to_contest_result", to_json(result))
+        await sio.emit("join_player_to_contest_result", to_json(result), to=player.sid)
     else:
         result = Result(False, "can not join you should to take due in full constraints", None)
-        await sio.emit("join_player_to_contest_result", to_json(result))
+        await sio.emit("join_player_to_contest_result", to_json(result), to=player.sid)
 
 
 @sio.event
 async def show_all_contest_available(sid):
-    res = show_all_contest_available_handler()
+    res = all_current_contests
     if res is not None:
         result = Result(True, "successful", res)
-        await sio.emit("show_all_contest_available_result", to_json(result))
+        await sio.emit("show_all_contest_available_result", to_json(result), to=sid)
     else:
         result = Result(False, "do not exist any contest in server", None)
-        await sio.emit("show_all_contest_available_result", to_json(result))
+        await sio.emit("show_all_contest_available_result", to_json(result), to=sid)
 
 
 @sio.event
@@ -163,10 +178,10 @@ async def show_my_contests_finished(sid):
     res = show_finish_contest_handler(player)
     if res is not None:
         result = Result(True, "successful", res)
-        await sio.emit("show_my_contests_finished_result", to_json(result))
+        await sio.emit("show_my_contests_finished_result", to_json(result), to=player.sid)
     else:
         result = Result(False, "can't show the contest finished try again please", None)
-        await sio.emit("show_my_contests_finished_result", to_json(result))
+        await sio.emit("show_my_contests_finished_result", to_json(result), to=player.sid)
 
 
 @sio.event
@@ -199,22 +214,22 @@ async def show_games_saved(sid):
     res = show_games_save_handle(player)
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("show_games_saved_result", to_json(result))
+        await sio.emit("show_games_saved_result", to_json(result), to=player.sid)
     else:
         result = Result(False, "don't have any games saved", None)
-        await sio.emit("show_games_saved_result", to_json(result))
+        await sio.emit("show_games_saved_result", to_json(result), to=player.sid)
 
 
 @sio.event
 async def load(sid, _id):
     player = get_player_by_sid(sid, all_player_connecting)
-    res = load_game_handle(_id, player)
+    res = load_game_handle(_id)
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("load_result", to_json(result))
+        await sio.emit("load_result", to_json(result), to=player.sid)
     else:
         result = Result(False, "n't load this game", None)
-        await sio.emit("load_result", to_json(result))
+        await sio.emit("load_result", to_json(result), to=player.sid)
 
 
 if __name__ == '__main__':

@@ -17,10 +17,9 @@ def show_games_save_handle(player):
     games = []
     for p in players:
         if p.id == player.id:
-            for id in p.games_id_saved:
-                games.append(get_game_by_id(id))
-
-    if len(games) > 0:
+            for _id in p.games_id_saved:
+                games.append(get_game_by_id(_id))
+    if games:
         return games
     else:
         return None

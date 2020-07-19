@@ -160,6 +160,21 @@ class Game(ABC):
             return 1
         return 0
 
+    def get_loser(self):
+        white_dead_cnt = 0
+        black_dead_cnt = 0
+        for piece in self.white_pieces:
+            if piece.dead or not self.can_move(piece):
+                white_dead_cnt += 1
+        if white_dead_cnt == len(self.white_pieces):
+            return 1
+        for piece in self.black_pieces:
+            if piece.dead or not self.can_move(piece):
+                black_dead_cnt += 1
+        if black_dead_cnt == len(self.black_pieces):
+            return 2
+        return 0
+
     """
         organize the turns, get the move from the white or black player
         (depending on turn)

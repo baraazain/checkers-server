@@ -14,9 +14,9 @@ def create_contest_handler(form):
     else:
         new_id = contests[len(contests) - 1].id + 1
     for con in contests:
-        if form.name==con.name:
+        if form.name == con.name:
             return None
-    contest = Contest(new_id, form.name, form.date, form.mode, form.constraints)
+    contest = Contest(new_id, form.name, form.date, form.mode)
     contests.append(contest)
     save_contest(contests)
     return contest
@@ -24,20 +24,16 @@ def create_contest_handler(form):
 
 def join_player_to_contest_handler(_id, player):
     contests: list = load_contest()
+    res = None
     for contest in contests:
         if contest.id == _id:
             res = contest.add_new_player(player)
-
+    players = load_players()
+    for p in players:
+        if p.id == player.id:
+            p.currentContest.append(_id)
     save_contest(contests)
     return res
-
-
-def show_all_contest_available_handler():
-    contests: list = load_contest()
-    if len(contests) == 0:
-        return None
-    else:
-        return contests
 
 
 def show_finish_contest_handler(playerx):
