@@ -77,6 +77,7 @@ def calc_new_rate(player_rate: int, opp_rates: list, outcomes: list) -> int:
     score = 0
     exp_score = 0
 
+
     for opp_rate, outcome in zip(opp_rates, outcomes):
         score += calc_score(1, outcome)
         exp_score += calc_expected_score(player_rate, opp_rate)
@@ -109,8 +110,8 @@ def to_dict(obj):
                     if isinstance(obj, Player):
                         return {'name': obj.name,
                                 'password': "",
-                                'id': obj.id, 'rate': obj.rate,
-                                'current_contests': to_dict(obj.currentContest)}
+                                'id': obj.id, 'rate': obj.rate
+                                }
 
                     return obj.__dict__
 

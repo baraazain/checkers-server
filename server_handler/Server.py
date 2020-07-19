@@ -1,6 +1,5 @@
 import copy
 from typing import List
-
 from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
 from server_handler.auth_handler import *
@@ -19,7 +18,7 @@ all_current_contests = {}
 
 
 @sio.event
-async def connect(sid):
+async def connect(sid, environ):
     print('connected: ', sid)
 
 
@@ -33,40 +32,43 @@ async def disconnect(sid):
 @sio.event
 async def signup(sid, player):
     p: RemotePlayer = signup_handle(player)
-    p.sid = sid
+
     if p is not None:
+        p.sid = sid
         result = Result(True, 'successful signup', None)
         all_player_connecting[p.id] = p
-        await sio.emit("signup_result", to_json(result))
+        await sio.emit("signup_result", to_json(result), to=sid)
     else:
         result = Result(False, 'failed signup <user name taken>', None)
-        await sio.emit("signup_result", to_json(result))
+        await sio.emit("signup_result", to_json(result), to=sid)
 
 
 @sio.event
 async def login(sid, player):
     p: RemotePlayer = login_handle(player)
-    p.sid = sid
+
     if p is not None:
+        p.sid = sid
         result = Result(True, 'successful login', None)
         all_player_connecting[p.id] = p
-        await sio.emit("login_result", to_json(result))
+        await sio.emit("login_result", to_json(result), to=sid)
     else:
         result = Result(False, 'failed username or password is wrong', None)
-        await sio.emit("login_result", to_json(result))
+        await sio.emit("login_result", to_json(result), to=sid)
 
 
 @sio.event
 async def update_account(sid, update_player):
     p: RemotePlayer = update_account_handle(get_player_by_sid(sid, all_player_connecting), update_player)
-    p.sid = sid
+
     if p is not None:
+        p.sid = sid
         all_player_connecting[p.id] = p
         result = Result(True, 'successful update', None)
-        await sio.emit("update_account_result", to_json(result))
+        await sio.emit("update_account_result", to_json(result), to=sid)
     else:
         result = Result(False, 'cant update try again', None)
-        await sio.emit("update_account_result", to_json(result))
+        await sio.emit("update_account_result", to_json(result), to=sid)
 
 
 @sio.event
@@ -75,10 +77,10 @@ async def remove_account(sid):
     if remove_account_handle(player):
         del all_player_connecting[player.id]
         result = Result(True, 'successful delete', None)
-        await sio.emit("remove_account_result", to_json(result))
+        await sio.emit("remove_account_result", to_json(result), to=sid)
     else:
         result = Result(False, "can't delete the account try again please", None)
-        await sio.emit("remove_account_result", to_json(result))
+        await sio.emit("remove_account_result", to_json(result), to=sid)
 
 
 @sio.event
@@ -87,10 +89,10 @@ async def show_account(sid):
     p = show_account_handle(player)
     if p:
         result = Result(True, "successful", p)
-        await sio.emit("show_account_result", to_json(result))
+        await sio.emit("show_account_result", to_json(result), to=sid)
     else:
         result = Result(False, "can't show the account try again please", None)
-        await sio.emit("show_account_result", to_json(result))
+        await sio.emit("show_account_result", to_json(result), to=sid)
 
 
 async def manage_contest(contest: Contest, players: List[RemotePlayer]):
@@ -115,6 +117,17 @@ async def manage_contest(contest: Contest, players: List[RemotePlayer]):
         # await start_game(game)
 
         win = game.get_winner()
+        outcomes = [win]
+        rate_player1 = calc_new_rate(game.player1.rate, [game.player2.rate], outcomes)
+        rate_player2 = calc_new_rate(game.player2.rate, [game.player1.rate], inverse(outcomes))
+        players = load_players()
+        for p in players:
+            if p.id == game.player1.id:
+                p.rate = rate_player1
+            if p.id == game.player2.id:
+                p.rate = rate_player2
+        save_players(players)
+
         if win == 1:
             winner = all_player_connecting[game.player1.id].sid
             loser = all_player_connecting[game.player2.id].sid
