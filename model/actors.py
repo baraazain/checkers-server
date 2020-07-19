@@ -10,7 +10,9 @@ class Player(ABC):
         self.name = name
         self.password = password
         self.rate = 1000
+        self.games_id_saved = []
         self.currentContest = []
+        self.contest_id_finished = []
 
     @abstractmethod
     def act(self, game) -> Action:
@@ -43,7 +45,7 @@ class ConsolePlayer(Human):
         super().__init__(_id, name, password)
 
     def act(self, game):
-        paths = game.get_all_possible_actions()
+        paths = game.get_all_possible_paths()
         size = len(paths)
 
         for idx, path in enumerate(paths):
@@ -67,7 +69,7 @@ class RemotePlayer(Human):
 
     @classmethod
     def from_dict(cls, data):
-        return cls(None, data['id'], data['name'], data['password'])
+        return cls(None, data['_id'], data['name'], data['password'])
 
     def act(self, game):
         pass

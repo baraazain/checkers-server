@@ -66,6 +66,7 @@ def play_match(model: tk.models.Model,
         other_agent.build_mct(ut.GameState(deepcopy(current_game)), other_model)
 
     turn = 0
+    path = []
     while not current_game.end():
         if not self_play:
             current_agent = agent if current_game.current_turn == 1 else other_agent
@@ -82,20 +83,37 @@ def play_match(model: tk.models.Model,
         if not current_game.is_legal_action(action):
             raise RejectedActionError(action, current_game, tau, agent, other_agent)
 
-        current_game.apply_action(action)
+        path.append(action)
+
+        if flip_flag:
+            validated_actions = list(map(current_game.validate_action, path))
+
+            current_game.promote = True
+
+            current_game.apply_action(current_game.validate_action(action))
+
+            current_game.promote = False
+
+            for valid_action in validated_actions:
+                if valid_action.capture is not None:
+                    valid_action.capture.dead = 1
+                    valid_action.capture.cell.piece = None
+
+            current_game.current_turn = 3 - current_game.current_turn
+            path.clear()
+        else:
+            current_game.apply_action(current_game.validate_action(action))
+
         if state_stack.head is None:
             raise TreeError(None, current_game, tau, agent, other_agent)
         sample_builder.add_move(state_stack, pi)
 
-        current_agent.on_update(action)
+        agent.on_update(action)
 
         if not self_play:
             other_agent.on_update(action)
 
         turn += 1
-
-        if flip_flag:
-            current_game.current_turn = 3 - current_game.current_turn
 
         print('*', end='' if turn % 20 != 0 else '\n')
 
@@ -105,12 +123,13 @@ def play_match(model: tk.models.Model,
 
     if winner == 1:
         winner = 'agent'
+        value = 1
     elif winner == 2:
         winner = 'other'
+        value = -1
     else:
         winner = 'draw'
-
-    value = ut.evaluate(current_game)
+        value = 0
 
     sample_builder.commit_sample(value, cgm.MAXIMIZER)
 
@@ -133,35 +152,47 @@ def train_batches(mini_batch, batch_size):
                                            'policy_head': training_targets['policy_head'][start:end]}
 
 
-def fit(model, samples):
+def fit(model: tk.models.Model, samples):
     overall_loss = []
     value_loss = []
     policy_loss = []
     for i in range(config.TRAINING_LOOPS):
         mini_batch = random.sample(samples, min(config.BATCH_SIZE, len(samples)))
-        for x_train, y_train in train_batches(mini_batch, 32):
-            res = model.train_on_batch(x=x_train, y=y_train, return_dict=True)
-            overall_loss.append(res['loss'])
-            value_loss.append(res['value_head_loss'])
-            policy_loss.append(res['policy_head_loss'])
+
+        training_states = np.array([sample['state'].get_deep_representation_stack() for sample in mini_batch])
+
+        training_targets = {'value_head': np.array([sample['value'] for sample in mini_batch]),
+                            'policy_head': np.array([sample['policy'] for sample in mini_batch])}
+
+        res = model.fit(training_states, training_targets, epochs=1, batch_size=8)
+        res = res.history
+        overall_loss.append(res['loss'])
+        value_loss.append(res['value_head_loss'])
+        policy_loss.append(res['policy_head_loss'])
+
     return overall_loss, value_loss, policy_loss
 
 
-def generate_data():
-    iteration = 0
+def generate_data(limit: int = 3, version_dataset: int = config.CURRENT_DATASET):
+    iteration = version_dataset + 1
 
-    dataset = ut.SampleBuilder()
+    dataset = ut.SampleBuilder.load(version_dataset, ''.join([ut.archive_folder, '/tmp']))
+    # dataset = ut.SampleBuilder()
 
     current_NN = ut.load_best_model()
 
-    while True:
-
+    for _ in range(limit):
+        s = 0
         for i in range(config.EPISODES):
             print(f'Episode {i + 1} started')
             start_time = time.monotonic()
             sb, _ = play_match(current_NN, turns_until_tau0=config.TURNS_UNTIL_TAU0)
             dataset.samples.extend(sb.samples)
-            print(f'Episode {i + 1} ended in {(time.monotonic() - start_time) / 60} minutes')
+            t = (time.monotonic() - start_time)
+            s += t
+            print(f'Episode {i + 1} ended in {t / 60} minutes')
+
+        print(f'Total time: {s / 60} minutes')
 
         size = len(dataset.samples)
         dataset.save(iteration, ''.join([ut.archive_folder, '/tmp']))
@@ -178,37 +209,32 @@ def evaluate(best_version, current_NN, best_NN):
         start_time = time.monotonic()
         _, winner = play_match(current_NN, best_NN)
         score[winner] += 1
-        print(f'Evaluation episode {i + 1} ended in {(time.monotonic() - start_time) / 60} minutes')
+        print(f'Evaluation episode {i + 1} ended in {(time.monotonic() - start_time) / 60} minutes '
+              f'and the winner is {winner}')
 
     ratio = score['agent'] * 100 // config.EVAL_EPISODES
 
-    print(f'current version win ration: {ratio}')
+    print(f'current version win ratio: {ratio}')
 
     if ratio >= config.SCORING_THRESHOLD:
         best_NN.set_weights(current_NN.get_weights())
         best_version = best_version + 1
         ut.save_model(best_NN, version=best_version)
         print('Saving a new version')
+        return True
+    else:
+        return False
 
 
 def train(current_NN, dataset, iteration):
-    try:
-        with open('data/alphazero/loss.json', 'r') as f:
-            try:
-                mp = json.load(f)
-            except json.JSONDecodeError:
-                mp = {}
-    except FileNotFoundError:
-        mp = {}
+    with open('data/alphazero/loss.json', 'a+') as f:
+        overall_loss, value_loss, policy_loss = fit(current_NN, dataset.samples)
 
-    overall_loss, value_loss, policy_loss = fit(current_NN, dataset.samples)
+        mp = {f'iteration {iteration}': {'overall_loss': overall_loss,
+                                         'value_loss': value_loss,
+                                         'policy_loss': policy_loss}}
 
-    mp[f'iteration {iteration}'] = {'overall_loss': overall_loss,
-                                    'value_loss': value_loss,
-                                    'policy_loss': policy_loss}
-
-    with open('data/alphazero/loss.json', 'w') as f:
-        json.dump(mp, f, indent=4)
+        f.write(json.dumps(mp, indent=4) + '\n')
 
 
 def merge_datasets(path):

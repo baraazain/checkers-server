@@ -4,7 +4,7 @@ import time
 from typing import Optional, List, Dict
 
 from model.action import Action
-from model.game import MAXIMIZER
+from model.game import MAXIMIZER, Game
 from model.piece import Type
 from .utils import GameState
 
@@ -56,18 +56,26 @@ class AlphaBetaSearch:
         """
         game = node.game_state.get_game()
         if game.end():
-            return int(1e12) if game.get_winner() == MAXIMIZER else int(-1e12)
+            winner = game.get_winner()
+            if winner == 0:
+                value = 0
+            elif winner == MAXIMIZER:
+                value = int(1e12)
+            else:
+                value = int(-1e12)
+
+            return value
 
         res = 0
         for piece in game.white_pieces:
-            if not piece.dead:
+            if not piece.dead and game.can_move(piece):
                 if piece.type == Type.KING:
                     res += 100
                 else:
                     res += 1
 
         for piece in game.black_pieces:
-            if not piece.dead:
+            if not piece.dead and game.can_move(piece):
                 if piece.type == Type.KING:
                     res -= 100
                 else:
@@ -247,3 +255,7 @@ class AlphaBetaSearch:
             print("clearing memory")
             self.graph.clear()
             self.root = Node(self.root.game_state)
+
+
+def hint(game: Game) -> List[Action]:
+    return AlphaBetaSearch(GameState(game), pov=1 if game.current_turn == MAXIMIZER else 2, timeout=3).get_best_action()

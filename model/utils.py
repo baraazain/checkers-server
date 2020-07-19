@@ -1,6 +1,7 @@
-import json
 import datetime as dt
+import json
 
+from .actors import Player
 from .grid import Cell, Grid
 from .piece import Piece
 
@@ -87,14 +88,14 @@ def calc_new_rate(player_rate: int, opp_rates: list, outcomes: list) -> int:
 
 def to_dict(obj):
     if isinstance(obj, dt.datetime):
-        return dict(year=obj.year,
-                    month=obj.month,
-                    day=obj.day,
-                    hour=obj.hour,
-                    minute=obj.minute,
-                    second=obj.second,
-                    tzinfo=obj.tzinfo)
-
+        # return dict(year=obj.year,
+        #             month=obj.month,
+        #             day=obj.day,
+        #             hour=obj.hour,
+        #             minute=obj.minute,
+        #             second=obj.second,
+        #             tzinfo=obj.tzinfo)
+        return str(obj)
     else:
         if isinstance(obj, Grid):
             return dict(n=obj.n, m=obj.m, grid=None)
@@ -105,6 +106,12 @@ def to_dict(obj):
                 if isinstance(obj, Cell):
                     return {'r': obj.r, 'c': obj.c, 'piece': None}
                 else:
+                    if isinstance(obj, Player):
+                        return {'name': obj.name,
+                                'password': "",
+                                'id': obj.id, 'rate': obj.rate,
+                                'current_contests': to_dict(obj.currentContest)}
+
                     return obj.__dict__
 
 

@@ -9,17 +9,17 @@ from .piece import *
 
 class InternationalGame(Game):
     @classmethod
-    def build(cls, white_pieces: list, black_pieces: list, turn: int, no_progress_count: int):
+    def build(cls, white_pieces: list, black_pieces: list, turn: int, no_progress: int):
         game = cls(-1, None, None, None)
         game.white_pieces = copy.deepcopy(white_pieces)
         game.black_pieces = copy.deepcopy(black_pieces)
         game.current_turn = turn
         pieces = game.white_pieces + game.black_pieces
         for piece in pieces:
-            if not piece.dead:
+            if piece.dead != 1:
                 game.grid[piece.cell.r][piece.cell.c].piece = piece
                 piece.cell = game.grid[piece.cell.r][piece.cell.c]
-        game.no_progress_count = no_progress_count
+        game.no_progress = no_progress
         return game
 
     # for testing purposes
@@ -32,12 +32,12 @@ class InternationalGame(Game):
                 j = 0
                 for c in line:
                     if c != ' ':
-                        if c == 'B':
-                            piece = Piece(game.grid[i][j], Type.PAWN, Color.BLACK)
+                        if c == 'B' or c == 'b':
+                            piece = Piece(game.grid[i][j], Type.PAWN if c == 'b' else Type.KING, Color.BLACK)
                             game.grid[i][j].piece = piece
                             game.black_pieces.append(piece)
-                        if c == 'W':
-                            piece = Piece(game.grid[i][j], Type.PAWN, Color.WHITE)
+                        if c == 'W' or c == 'w':
+                            piece = Piece(game.grid[i][j], Type.PAWN if c == 'w' else Type.KING, Color.WHITE)
                             game.grid[i][j].piece = piece
                             game.white_pieces.append(piece)
                         j += 1
@@ -124,14 +124,15 @@ class InternationalGame(Game):
             if self.grid[cur_r][cur_c].get_color() == src.get_color():
                 return False, None
             if self.grid[cur_r][cur_c].piece is not None:
-                cnt += 1
-                piece = self.grid[cur_r][cur_c].piece
+                if self.grid[cur_r][cur_c].piece.dead == 0:
+                    cnt += 1
+                    piece = self.grid[cur_r][cur_c].piece
             cur_r += dir_r
             cur_c += dir_c
         if cnt == 1:
-            for action in self.path:
-                if action.capture == piece:
-                    return False, None
+            # for action in self.path:
+            #     if action.capture == piece:
+            #         return False, None
             return True, piece
         else:
             return False, None
@@ -203,9 +204,9 @@ class InternationalGame(Game):
         if middle_cell.get_color() == src.get_color():
             return False, None
 
-        for action in self.path:
-            if action.capture == middle_cell.piece:
-                return False, None
+        if middle_cell.piece.dead != 0:
+            return False, None
+
         return True, middle_cell.piece
 
     """
@@ -456,7 +457,7 @@ class InternationalGame(Game):
 
         return actions
 
-    def get_all_possible_actions(self):
+    def get_all_possible_paths(self):
         actions = self.get_all_possible_captures()
         if not actions:
             actions = self.get_all_possible_walks()
@@ -468,13 +469,13 @@ class InternationalGame(Game):
         if self.current_turn == 1:
             # iterate over all white pieces and get the moves from the pieces
             for piece in self.white_pieces:
-                if not piece.dead:
+                if piece.dead == 0:
                     actions.extend(self.get_all_possible_primary_walks(piece, self.player1))
                     actions.extend(self.get_all_possible_secondary_walks(piece, self.player1))
         else:
             # iterate over all black pieces and get the moves for this pieces
             for piece in self.black_pieces:
-                if not piece.dead:
+                if piece.dead == 0:
                     actions.extend(self.get_all_possible_primary_walks(piece, self.player2))
                     actions.extend(self.get_all_possible_secondary_walks(piece, self.player2))
 
@@ -515,7 +516,7 @@ class InternationalGame(Game):
         if self.current_turn == 1:
             # iterate over all white pieces and get the moves from the pieces
             for piece in self.white_pieces:
-                if not piece.dead:
+                if piece.dead == 0:
                     if self.can_capture(piece):
                         self.mx = 0
                         self.paths.clear()
@@ -524,7 +525,7 @@ class InternationalGame(Game):
         else:
             # iterate over all black pieces and get the moves from this pieces
             for piece in self.black_pieces:
-                if not piece.dead:
+                if piece.dead == 0:
 
                     if self.can_capture(piece):
                         self.mx = 0
@@ -569,7 +570,7 @@ class InternationalGame(Game):
             return False
         if self.current_turn == 2 and self.grid[r][c].get_color() != Color.BLACK:
             return False
-        action = self._validate_action(action)
+        action = self.validate_action(action)
         if self.correct_capture(action) or self.correct_walk(action):
             return True
         return False
@@ -579,7 +580,7 @@ class InternationalGame(Game):
 
         validated_actions = []
         for action in actions:
-            validated_actions.append(self._validate_action(action))
+            validated_actions.append(self.validate_action(action))
 
         for idx, action in enumerate(validated_actions):
             if idx == size - 1:
@@ -588,7 +589,7 @@ class InternationalGame(Game):
 
         for action in validated_actions:
             if action.capture is not None:
-                action.capture.dead = True
+                action.capture.dead = 1
                 action.capture.cell.piece = None
 
         self.promote = False
@@ -611,8 +612,9 @@ class InternationalGame(Game):
         dst_r = dst.r
         dst_c = dst.c
 
-        # in case of EAT
+        # in case of capture
         if action.capture is not None:
+            action.capture.dead = -1
             self.no_progress = self.NO_PROGRESS_LIMIT
 
         self.grid[src_r][src_c].piece.cell = dst
@@ -640,6 +642,9 @@ class InternationalGame(Game):
 
             if action.promote:
                 dst.set_type(Type.PAWN)
+
+            if action.capture is not None:
+                action.capture.dead = 0
 
             self.no_progress = action.no_progress_count
             src.piece = dst.piece

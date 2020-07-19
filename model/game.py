@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 from .action import Action
 from .actors import Player
@@ -88,12 +89,12 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def get_all_possible_actions(self):
+    def get_all_possible_paths(self):
         pass
 
     def get_all_possible_states(self):
         states = []
-        paths = self.get_all_possible_actions()
+        paths = self.get_all_possible_paths()
         for path in paths:
             new_state = deepcopy(self)
             new_state.apply_turn(path)
@@ -178,6 +179,21 @@ class Game(ABC):
             return 1
         return 0
 
+    def get_loser(self):
+        white_dead_cnt = 0
+        black_dead_cnt = 0
+        for piece in self.white_pieces:
+            if piece.dead or not self.can_move(piece):
+                white_dead_cnt += 1
+        if white_dead_cnt == len(self.white_pieces):
+            return 1
+        for piece in self.black_pieces:
+            if piece.dead or not self.can_move(piece):
+                black_dead_cnt += 1
+        if black_dead_cnt == len(self.black_pieces):
+            return 2
+        return 0
+
     """
         organize the turns, get the move from the white or black player
         (depending on turn)
@@ -228,7 +244,7 @@ class Game(ABC):
         else:
             print("Draw -_-")
 
-    def _validate_action(self, action):
+    def validate_action(self, action):
         src: Cell = action.src
         dst: Cell = action.dst
         src: Cell = self.grid[src.r][src.c]
