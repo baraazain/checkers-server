@@ -109,7 +109,9 @@ def to_dict(obj):
                     if isinstance(obj, Player):
                         return {'name': obj.name,
                                 'password': "",
-                                'id': obj.id, 'rate': obj.rate}
+                                'id': obj.id, 'rate': obj.rate
+                                }
+
                     return obj.__dict__
 
 
