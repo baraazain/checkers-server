@@ -12,6 +12,10 @@ class Action:
         self.promote = False
         self.no_progress_count = 0
 
+    @classmethod
+    def from_dict(cls, data):
+        action = cls(**data)
+
     def is_capture(self):
         return self.capture is not None
 

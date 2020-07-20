@@ -1,11 +1,9 @@
 class form:
-    def __init__(self, name, date, mode, constraints):
+    def __init__(self, name, date, mode):
         self.name = name
         self.date = date
         self.mode = mode
-        self.constraints = constraints
 
     @classmethod
     def from_dict(cls, dictionary):
-
-        return cls(dictionary['name'], dictionary["date"], dictionary["mode"], dictionary["mode"])
+        return cls(dictionary['name'], dictionary["date"], dictionary["mode"])

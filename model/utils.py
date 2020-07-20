@@ -109,11 +109,9 @@ def to_dict(obj):
                     if isinstance(obj, Player):
                         return {'name': obj.name,
                                 'password': "",
-                                'id': obj.id, 'rate': obj.rate,
-                                'current_contests': to_dict(obj.currentContest)}
-
+                                'id': obj.id, 'rate': obj.rate}
                     return obj.__dict__
 
 
 def to_json(obj):
-    return json.dumps(obj, default=to_dict, indent=4)
+    return json.loads(json.dumps(obj, default=to_dict))

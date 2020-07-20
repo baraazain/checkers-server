@@ -9,6 +9,13 @@ def get_player_by_sid(sid, all_player_connecting):
     return None
 
 
+def get_game_by_sid(id, all_game_playing):
+    for key in all_game_playing:
+        if all_game_playing[key].id == id:
+            return all_game_playing[key]
+    return None
+
+
 def get_player_by_name(name):
     players = load_players()
     for player in players:
@@ -30,6 +37,7 @@ def get_game_by_id(_id):
     for game in games:
         if game.id == _id:
             return game
+
     return None
 
 

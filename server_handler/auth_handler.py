@@ -30,11 +30,11 @@ def login_handle(playerx):
     return None
 
 
-def update_account_handle(p,playerx):
+def update_account_handle(p, playerx):
     player = RemotePlayer.from_dict(json.loads(playerx))
     players = load_players()
     for user in players:
-        if user.name == p.name and user.password== p.password:
+        if user.id == p.id and user.password == p.password:
             user.name = player.name
             user.password = player.password
             save_players(players)
@@ -45,7 +45,7 @@ def update_account_handle(p,playerx):
 def remove_account_handle(player):
     players: list = load_players()
     for user in players:
-        if user.name == player.name and user.password==player.password:
+        if user.name == player.name and user.password == player.password:
             players.remove(user)
             save_players(players)
             return True
@@ -55,6 +55,6 @@ def remove_account_handle(player):
 def show_account_handle(player):
     players = load_players()
     for user in players:
-        if user.name == player.name and user.password==player.password:
+        if user.name == player.name and user.password == player.password:
             return user
     return None

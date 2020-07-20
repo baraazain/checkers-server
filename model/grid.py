@@ -2,7 +2,6 @@ from math import floor, log10
 
 
 class Cell:
-
     def __init__(self, r, c, piece):
         self.r = r
         self.c = c

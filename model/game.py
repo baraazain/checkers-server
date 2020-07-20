@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 
 from .action import Action
+from .actors import Player
 from .piece import *
 
 # Constants
@@ -11,6 +12,24 @@ MAXIMIZER = 1
 class Mode:
     INTERNATIONAL = "INTERNATIONAL"
     TURKISH = "TURKISH"
+
+
+class Level:
+    HUMAN = "HUMAN"
+    DUMMY = "DUMMY"
+    ALPHA_BETA = "ALPHA_BETA"
+    MONTE_CARLO = "MONTE_CARLO"
+    ALPHA_ZERO = "ALPHA_ZERO"
+
+
+class GameInfo:
+    def __init__(self, mode, level):
+        self.mode = mode
+        self.level = level
+
+    @classmethod
+    def from_dict(cls, data):
+        return GameInfo(**data)
 
 
 class Game(ABC):
@@ -160,6 +179,21 @@ class Game(ABC):
             return 1
         return 0
 
+    def get_loser(self):
+        white_dead_cnt = 0
+        black_dead_cnt = 0
+        for piece in self.white_pieces:
+            if piece.dead or not self.can_move(piece):
+                white_dead_cnt += 1
+        if white_dead_cnt == len(self.white_pieces):
+            return 1
+        for piece in self.black_pieces:
+            if piece.dead or not self.can_move(piece):
+                black_dead_cnt += 1
+        if black_dead_cnt == len(self.black_pieces):
+            return 2
+        return 0
+
     """
         organize the turns, get the move from the white or black player
         (depending on turn)
@@ -201,14 +235,14 @@ class Game(ABC):
                         return False
         return True
 
-    def print_the_winner(self):
+    def get_the_winner(self):
         winner = self.get_winner()
         if winner == 1:
-            print("player #1 the winner")
+            return self.player1
         elif winner == 2:
-            print("player #2 the winner")
+            return self.player2
         else:
-            print("Draw -_-")
+            return None
 
     def validate_action(self, action):
         src: Cell = action.src
