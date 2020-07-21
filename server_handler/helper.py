@@ -107,7 +107,7 @@ def print_players():
 
 def print_contests():
     with open('../contests.dat', 'rb') as file:
-        if os.path.getsize('../contest.dat') == 0:
+        if os.path.getsize('../contests.dat') == 0:
             print('File is  empty')
             return []
         else:

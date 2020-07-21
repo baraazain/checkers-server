@@ -84,8 +84,9 @@ class Contest:
     def add_new_player(self, player: Player) -> None:
         for constraint in self.constraints:
             if not constraint.is_valid(player):
-                return
+                return False
         self.participants.append(player)
+        return True
 
     def distribute(self):
         self.games.clear()
