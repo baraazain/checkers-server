@@ -1,13 +1,12 @@
 import asyncio
 import datetime
 
+from .form import Form
 from .helper import *
-from model.contest import Contest
-import json
-
+from model.contest import *
 
 def create_contest_handler(form):
-    form = form.from_dict(json.loads(form))
+    form = Form.from_dict(form)
     contests = load_contest()
     if len(contests) == 0:
         new_id = 1
@@ -17,6 +16,10 @@ def create_contest_handler(form):
         if form.name == con.name:
             return None
     contest = Contest(new_id, form.name, form.date, form.mode)
+    rate_constraint = RatingConstraint(form.rate)
+    count_of_player = MaxParticipantsConstraint(form.count_of_player, 0)
+    constraints = [rate_constraint, count_of_player]
+    contest.add_constraints(constraints)
     contests.append(contest)
     save_contest(contests)
     return contest
@@ -24,14 +27,14 @@ def create_contest_handler(form):
 
 def join_player_to_contest_handler(_id, player):
     contests: list = load_contest()
-    res = None
     for contest in contests:
         if contest.id == _id:
             res = contest.add_new_player(player)
-    players = load_players()
-    for p in players:
-        if p.id == player.id:
-            p.currentContest.append(_id)
+    if res:
+        players = load_players()
+        for p in players:
+            if p.id == player.id:
+                p.currentContest.append(_id)
     save_contest(contests)
     return res
 
@@ -43,7 +46,6 @@ def show_finish_contest_handler(playerx):
         if player.id == playerx.id:
             for _id in player.contest_id_finished:
                 contests.append(get_contest_by_id(_id))
-
             return contests
     return None
 

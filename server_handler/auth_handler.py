@@ -4,7 +4,7 @@ from server_handler.helper import *
 
 
 def signup_handle(playerx):
-    player = RemotePlayer.from_dict(json.loads(playerx))
+    player = RemotePlayer.from_dict(playerx)
     players: list = load_players()
     for user in players:
         if player.name == user.name:
@@ -22,7 +22,7 @@ def signup_handle(playerx):
 
 
 def login_handle(playerx):
-    player = RemotePlayer.from_dict(json.loads(playerx))
+    player = RemotePlayer.from_dict(playerx)
     players: list = load_players()
     for user in players:
         if player.name == user.name and player.password == user.password:
@@ -33,6 +33,9 @@ def login_handle(playerx):
 def update_account_handle(p, playerx):
     player = RemotePlayer.from_dict(json.loads(playerx))
     players = load_players()
+    for i in players:
+        if i.name == player.name:
+            return None
     for user in players:
         if user.id == p.id and user.password == p.password:
             user.name = player.name
