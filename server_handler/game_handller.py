@@ -46,7 +46,7 @@ def create_new_game_handle(game_info: GameInfo, all_game_playing, player1):
 
     player2 = None
     if game_info.level == Level.HUMAN:
-        pass
+        player2 = None
     elif game_info.level == Level.DUMMY:
         player2 = DummyAgent()
     elif game_info.level == Level.MONTE_CARLO:
@@ -186,4 +186,9 @@ def apply_action_handle(game, path):
 
 def undo_handle(game):
     game.undo()
+    return game
+
+
+def join_handle(game, player):
+    game.player2 = player
     return game

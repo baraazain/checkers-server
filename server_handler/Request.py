@@ -26,3 +26,22 @@ class SecondButtonRequest:
     @classmethod
     def from_dict(cls, data):
         return SecondButtonRequest(**data)
+
+
+class JoinRequest:
+    def __init__(self, id, player):
+        self.id = id
+        self.player = player
+
+    @classmethod
+    def from_dict(cls, data):
+        return JoinRequest(**data)
+
+
+class WaitingGamesRequest:
+    def __init__(self, games):
+        self.games = games
+
+    @classmethod
+    def from_dict(cls, data):
+        return WaitingGamesRequest(**data)

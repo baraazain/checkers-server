@@ -4,7 +4,7 @@ import threading
 from typing import List
 
 from model.game import *
-from server_handler.Request import FirstButtonRequest, SecondButtonRequest, IdRequest
+from server_handler.Request import FirstButtonRequest, SecondButtonRequest, IdRequest, JoinRequest, WaitingGamesRequest
 from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
 from server_handler.auth_handler import *
@@ -21,6 +21,7 @@ sio.attach(app)
 all_player_connecting = {}
 all_current_contests = {}
 all_game_playing = {}
+all_game_waiting = {}
 
 
 @sio.event
@@ -364,7 +365,11 @@ async def create_new_game(sid, data):
     #     print(res.grid)
 
     if res is not None:
-        all_game_playing[res.id] = res
+        if res.player2 is not None:
+            all_game_playing[res.id] = res
+        else:
+            all_game_waiting[res.id] = res
+
         result = Result(True, 'successful', res)
         await sio.emit("create_new_game", to_json(result), room=sid)
     else:
@@ -408,6 +413,48 @@ async def hint(sid, data):
     game = get_game_by_sid(data['id'], all_game_playing)
 
     threading.Thread(target=hint_thread_target, args=(game,)).start()
+
+
+@sio.on("join")
+async def join(sid, data):
+    print(data)
+    # data = json.loads(data)
+    # data = IdRequest.from_dict(data)
+    data = JoinRequest.from_dict(data)
+    # data = JoinRequest.from_dict(json.loads(data))
+
+    id = data.id
+    player = data.player
+
+    game = get_game_by_sid(id, all_game_waiting)
+    res = join_handle(game, player)
+
+    if res is not None:
+        all_game_waiting[res.id] = None
+        all_game_playing[res.id] = res
+        result = Result(True, 'successful', res)
+        # Emit two players.
+        await sio.emit("join", to_json(result))
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("join", to_json(result))
+
+
+@sio.on("all_waiting_games")
+async def all_waiting_games(sid):
+    games = []
+
+    for game in all_game_waiting:
+        games.append(game)
+
+    res = WaitingGamesRequest(games)
+
+    if res is not None:
+        result = Result(True, 'successful', res)
+        await sio.emit("all_waiting_games", to_json(result))
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("all_waiting_games", to_json(result))
 
 
 if __name__ == '__main__':
