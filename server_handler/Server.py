@@ -4,6 +4,7 @@ import threading
 from typing import List
 
 from model.chat import Message
+import ai.alpha_beta_search as absearch
 from model.game import *
 from server_handler.Request import FirstButtonRequest, SecondButtonRequest, IdRequest, JoinRequest, WaitingGamesRequest, \
     ChatRequest
@@ -15,6 +16,7 @@ from model.actors import *
 from model.utils import *
 from aiohttp import web
 import socketio
+import random
 
 sio = socketio.AsyncServer()
 app = web.Application()
@@ -111,7 +113,8 @@ async def manage_contest(contest: Contest, players: List[RemotePlayer]):
         playerrrs = load_players()
         for p in playerrrs:
             for player in players:
-                await sio.emit("contest_end", "the winner is:", to_json(result), to=all_player_connecting[player.id].sid)
+                await sio.emit("contest_end", "the winner is:", to_json(result),
+                               to=all_player_connecting[player.id].sid)
                 if p.id == player.id:
                     p.contest_id_finished.append(player.id)
                     p.currentContest.remove(contest.id)
@@ -216,25 +219,25 @@ async def show_my_current_contests(sid):
     res = show_my_current_contests(player)
     if res is not None:
         result = Result(True, "successful", res)
-        await sio.emit("show_my_current_contests_result", to_json(result),to=sid)
+        await sio.emit("show_my_current_contests_result", to_json(result), to=sid)
     else:
         result = Result(False, "can't show the current contest try again please", None)
-        await sio.emit("show_my_current_contests_result", to_json(result),to=sid)
+        await sio.emit("show_my_current_contests_result", to_json(result), to=sid)
 
 
 @sio.event
-async def save(sid, _id,player):
+async def save(sid, _id, player):
     res = save_game_handle(_id, player)
     if res:
         result = Result(True, "save is completed", None)
-        await sio.emit("save_result", to_json(result),to=sid)
+        await sio.emit("save_result", to_json(result), to=sid)
     else:
         result = Result(False, "can't save this game try again please", None)
-        await sio.emit("save_result", to_json(result),to=sid)
+        await sio.emit("save_result", to_json(result), to=sid)
 
 
 @sio.event
-async def show_games_saved(sid,player):
+async def show_games_saved(sid, player):
     res = show_games_save_handle(player)
     if res is not None:
         result = Result(True, 'successful', res)
@@ -281,62 +284,104 @@ async def get_possible_moves(sid, data):
 
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("get_possible_moves", to_json(result))
+        await sio.emit("get_possible_moves", to_json(result), to=sid)
     else:
         result = Result(False, "Error", None)
-        await sio.emit("get_possible_moves", to_json(result))
+        await sio.emit("get_possible_moves", to_json(result), to=sid)
+
+
+async def apply_bot(sid, game):
+    player = game.get_current_player()
+
+    if not isinstance(player, Agent):
+        raise RuntimeError("Cant apply Human Move")
+
+    other = game.get_other_player()
+
+    game, path = apply_action_handle(game, player.act(game))
+    # print(res)
+
+    result = Result(True, 'successful', game)
+    print("emiting update in bot", sid)
+    await sio.emit("update_game", to_json(result), to=sid)
+    result = Result(True, 'successful', path)
+    await sio.emit("apply_path", to_json(result), to=sid)
 
 
 @sio.on('apply_action')
 async def apply_action(sid, data):
-    print("DATAAAA: ", data)
+    print("fuck osama")
     data = SecondButtonRequest.from_dict(data)
 
     _id = data.id
     pairs = data.path
 
-    game = get_game_by_sid(_id, all_game_playing)
+    game: Game = get_game_by_sid(_id, all_game_playing)
     # game.init()
-    print("HEEREEE: ")
-    print(game.grid)
-
-    print("PATHHHHH: ")
-    for (r, c) in pairs:
-        print(r, c)
-    print("ENDDDD")
+    # print("HEEREEE: ")
+    # print(game.grid)
+    #
+    # print("PATHHHHH: ")
+    # for (r, c) in pairs:
+    #     print(r, c)
+    # print("ENDDDD")
 
     path = get_path(game, pairs)
 
-    print("Start")
-    for action in path:
-        print(action)
-    print("end")
+    # print("Start")
+    # for action in path:
+    #     print(action)
+    # print("end")
 
     game.last_path = path
-    print("Before: ", game.current_turn)
-    res1 = apply_action_handle(game, path)
+    # print("Before: ", game.current_turn)
+    res1, _ = apply_action_handle(game, path)
     res2 = path
+
     # print(res)
 
-    print("After: ", game.current_turn)
+    sid2 = -1
+    if game.level == Level.HUMAN:
+        sid1 = game.player1.sid
+        sid2 = game.player2.sid
+    else:
+        sid1 = sid
+
+    # print("After: ", game.current_turn)
 
     if res1 is not None:
         result = Result(True, 'successful', res1)
-        await sio.emit("update_game", to_json(result))
+
+        if sid1 != -1:
+            await sio.emit("update_game", to_json(result), to=sid1)
+        if sid2 != -1:
+            await sio.emit("update_game", to_json(result), to=sid2)
+
         result = Result(True, 'successful', res2)
-        await sio.emit("apply_path", to_json(result))
+
+        if sid1 != -1:
+            await sio.emit("apply_path", to_json(result), to=sid1)
+        if sid2 != -1:
+            await sio.emit("apply_path", to_json(result), to=sid2)
+
         if game.end():
             result = Result(True, "successful", game.get_the_winner())
-            await sio.emit("game_over", to_json(result))
+
+            if sid1 != -1:
+                await sio.emit("game_over", to_json(result))
+            if sid2 != -1:
+                await sio.emit("game_over", to_json(result))
     else:
         result = Result(False, "Error", None)
-        await sio.emit("update_game", to_json(result))
+        await sio.emit("update_game", to_json(result), to=sid)
+
+    if isinstance(game.get_current_player(), Agent):
+        asyncio.create_task(apply_bot(sid, game))
 
 
 @sio.on('undo')
 async def undo(sid, data):
-    data = IdRequest.from_dict(data)
-    _id = data.id
+    _id = data['id']
 
     game = get_game_by_sid(_id, all_game_playing)
 
@@ -344,12 +389,22 @@ async def undo(sid, data):
     res = undo_handle(game)
     print(res.grid)
 
+    sid2 = -1
+    if game.level == Level.HUMAN:
+        sid1 = game.player1.sid
+        sid2 = game.player2.sid
+    else:
+        sid1 = sid
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("undo", to_json(result))
+
+        if sid1 != -1:
+            await sio.emit("undo", to_json(result), to=sid1)
+        if sid2 != -1:
+            await sio.emit("undo", to_json(result), to=sid2)
     else:
         result = Result(False, "Error", None)
-        await sio.emit("undo", to_json(result))
+        await sio.emit("undo", to_json(result), to=sid)
 
 
 @sio.event
@@ -373,7 +428,6 @@ async def create_new_game(sid, data):
             all_game_playing[res.id] = res
         else:
             all_game_waiting[res.id] = res
-
         result = Result(True, 'successful', res)
         await sio.emit("create_new_game", to_json(result), room=sid)
     else:
@@ -388,35 +442,34 @@ async def initialize_game(sid, data):
 
     game = get_game_by_sid(_id, all_game_playing)
 
+    sid2 = -1
+    if game.level == Level.HUMAN:
+        sid1 = game.player1.sid
+        sid2 = game.player2.sid
+    else:
+        sid1 = sid
+
     res = initialize_game_handle(game)
 
     if res is not None:
         all_game_playing[res.id] = res
         result = Result(True, 'successful', res)
-        await sio.emit("initialize_game", to_json(result), room=sid)
+
+        await sio.emit("initialize_game", to_json(result), room=sid1)
+        if sid2 != -1:
+            await sio.emit("initialize_game", to_json(result), room=sid2)
     else:
         result = Result(False, "Error", None)
         await sio.emit("initialize_game", to_json(result), room=sid)
-
-
-def hint_thread_target(game):
-    # from ai.alpha_beta_search import hint
-
-    # path = hint(game)
-    for _ in range(1000000000):
-        pass
-
-    print("thread exited")
-#    print("ababa is here")
-
-    # asyncio.run(sio.emit("hint", to_json(path)))
 
 
 @sio.event
 async def hint(sid, data):
     game = get_game_by_sid(data['id'], all_game_playing)
 
-    threading.Thread(target=hint_thread_target, args=(game,)).start()
+    result = Result(True, 'successful', absearch.hint(game) )
+
+    await sio.emit("hint", to_json(result), room=sid)
 
 
 @sio.on("join")
@@ -433,15 +486,25 @@ async def join(sid, data):
     game = get_game_by_sid(id, all_game_waiting)
     res = join_handle(game, player)
 
+    sid1 = -1
+    sid2 = -1
+    if game.level == Level.HUMAN:
+        sid1 = game.player1.sid
+        sid2 = game.player2.sid
+
     if res is not None:
         all_game_waiting[res.id] = None
         all_game_playing[res.id] = res
         result = Result(True, 'successful', res)
         # Emit two players.
-        await sio.emit("join", to_json(result))
+
+        if sid1 != -1:
+            await sio.emit("join", to_json(result), to=sid1)
+        if sid2 != -1:
+            await sio.emit("join", to_json(result), to=sid2)
     else:
         result = Result(False, "Error", None)
-        await sio.emit("join", to_json(result))
+        await sio.emit("join", to_json(result), to=sid)
 
 
 @sio.on("all_waiting_games")
@@ -455,10 +518,10 @@ async def all_waiting_games(sid):
 
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("all_waiting_games", to_json(result))
+        await sio.emit("all_waiting_games", to_json(result), to=sid)
     else:
         result = Result(False, "Error", None)
-        await sio.emit("all_waiting_games", to_json(result))
+        await sio.emit("all_waiting_games", to_json(result), to=sid)
 
 
 @sio.on("chat")
@@ -471,12 +534,24 @@ async def chat(sid, data):
 
     res = handle_send_message(game, sent_message)
 
+    sid1 = -1
+    sid2 = -1
+    if game.level == Level.HUMAN:
+        if sid1 != sid:
+            sid1 = game.player1.sid
+        if sid2 != sid:
+            sid2 = game.player2.sid
+
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("chat", to_json(result))
+
+        if sid1 != -1:
+            await sio.emit("chat", to_json(result), to=sid1)
+        if sid2 != -1:
+            await sio.emit("chat", to_json(result), to=sid2)
     else:
         result = Result(False, "Error", None)
-        await sio.emit("chat", to_json(result))
+        await sio.emit("chat", to_json(result), to=sid)
 
 
 if __name__ == '__main__':

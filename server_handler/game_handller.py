@@ -43,30 +43,39 @@ def load_game_handle(_id):
 
 def create_new_game_handle(game_info: GameInfo, all_game_playing, player1):
     id = len(all_game_playing)
-
     player2 = None
-    if game_info.level == Level.HUMAN:
+    if game_info.level == Level.OFFLINE:
+        player2 = player1
+    elif game_info.level == Level.HUMAN:
         player2 = None
     elif game_info.level == Level.DUMMY:
         player2 = DummyAgent()
     elif game_info.level == Level.MONTE_CARLO:
         player2 = MonteCarloAgent(3)
     elif game_info.level == Level.ALPHA_BETA:
-        player2 = MiniMaxAgent(1, 5)
+        player2 = MiniMaxAgent(2, 5)
     elif game_info.level == Level.ALPHA_ZERO:
         player2 = AlphaZero(4)
-
     game = None
     if game_info.mode == Mode.INTERNATIONAL:
-        game = InternationalGame(id, player2, player2, datetime.datetime.now())
+        game = InternationalGame(id, player1, player2, datetime.datetime.now())
     elif game_info.mode == Mode.TURKISH:
-        game = TurkishGame(id, player2, player2, datetime.datetime.now())
+        game = TurkishGame(id, player1, player2, datetime.datetime.now())
+
+    game.level = game_info.level
 
     return game
 
 
 def initialize_game_handle(game: Game):
     game.init()
+    if game.player1 is not None:
+        game.player1.on_start(game)
+
+    if game.player2 is not None:
+        if game.player1 != game.player2:
+            game.player2.on_start(game)
+
     return game
 
 
@@ -181,7 +190,13 @@ def get_path(game, pairs):
 
 def apply_action_handle(game, path):
     game.apply_turn(path)
-    return game
+
+    if game.player1 is not None:
+        game.player1.on_update(path)
+    if game.player2 is not None:
+        game.player2.on_update(path)
+
+    return game, path
 
 
 def undo_handle(game):

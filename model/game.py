@@ -15,6 +15,7 @@ class Mode:
 
 
 class Level:
+    OFFLINE = "OFFLINE"
     HUMAN = "HUMAN"
     DUMMY = "DUMMY"
     ALPHA_BETA = "ALPHA_BETA"
@@ -57,6 +58,7 @@ class Game(ABC):
         self.no_progress = Game.NO_PROGRESS_LIMIT
         self.messages = []
         self.last_path = []
+        self.level = None
 
     @abstractmethod
     def init(self):
@@ -133,6 +135,9 @@ class Game(ABC):
 
     def get_current_player(self):
         return self.player1 if self.current_turn == 1 else self.player2
+
+    def get_other_player(self):
+        return self.player2 if self.current_turn == 1 else self.player1
 
     """
         Add piece to whitePieces array or blackPieces according to its

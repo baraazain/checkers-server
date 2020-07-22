@@ -28,6 +28,7 @@ class DummyAgent(Agent):
         super().__init__(0, "Dummy", None)
 
     def act(self, game):
+        time.sleep(1)
         actions = game.get_all_possible_paths()
         return random.choice(actions)
 
@@ -82,7 +83,7 @@ class MiniMaxAgent(Agent):
     """
 
     def __init__(self, pov: int, initial_depth: int = 5, timeout: int = 8):
-        super().__init__(None, "Max", None)
+        super().__init__(0, "Max", None)
         self.abs: Optional[AlphaBetaSearch] = None
         self.pov = pov
         self.timeout = timeout
@@ -109,7 +110,7 @@ class AlphaZero(Agent):
     """
 
     def __init__(self, simulation_limit):
-        super().__init__(None, "AlphaZero", None)
+        super().__init__(0, "AlphaZero", None)
         self.simulation_limit = simulation_limit
 
         self.mct = None
