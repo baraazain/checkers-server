@@ -44,10 +44,10 @@ async def signup(sid, player):
         p.sid = sid
         result = Result(True, 'successful signup', None)
         all_player_connecting[p.id] = p
-        await sio.emit("signup_result", to_json(result))
+        await sio.emit("signup_result", to_json(result), to=sid)
     else:
         result = Result(False, 'failed signup <user name taken>', None)
-        await sio.emit("signup_result", to_json(result))
+        await sio.emit("signup_result", to_json(result), to=sid)
 
 
 @sio.event
@@ -66,7 +66,6 @@ async def login(sid, player):
 @sio.event
 async def update_account(sid, update_player):
     p: RemotePlayer = update_account_handle(get_player_by_sid(sid, all_player_connecting), update_player)
-
     if p is not None:
         p.sid = sid
         all_player_connecting[p.id] = p
@@ -83,10 +82,10 @@ async def remove_account(sid):
     if remove_account_handle(player):
         del all_player_connecting[player.id]
         result = Result(True, 'successful delete', None)
-        await sio.emit("remove_account_result", to_json(result))
+        await sio.emit("remove_account_result", to_json(result), to=sid)
     else:
         result = Result(False, "can't delete the account try again please", None)
-        await sio.emit("remove_account_result", to_json(result))
+        await sio.emit("remove_account_result", to_json(result), to=sid)
 
 
 @sio.event
@@ -95,10 +94,10 @@ async def show_account(sid):
     p = show_account_handle(player)
     if p:
         result = Result(True, "successful", p)
-        await sio.emit("show_account_result", to_json(result))
+        await sio.emit("show_account_result", to_json(result), to=sid)
     else:
         result = Result(False, "can't show the account try again please", None)
-        await sio.emit("show_account_result", to_json(result))
+        await sio.emit("show_account_result", to_json(result), to=sid)
 
 
 async def manage_contest(contest: Contest, players: List[RemotePlayer]):
@@ -107,8 +106,13 @@ async def manage_contest(contest: Contest, players: List[RemotePlayer]):
         winner: Player = contest.participants[0]
         print("The Winner is: " + winner.name + " " + winner.id)
         result = Result(True, 'winner in contest', winner)
-        for player in players:
-            await sio.emit("contest_end", "the winner is:", to_json(result), to=all_player_connecting[player.id])
+        playerrrs = load_players()
+        for p in playerrrs:
+            for player in players:
+                await sio.emit("contest_end", "the winner is:", to_json(result), to=all_player_connecting[player.id].sid)
+                if p.id == player.id:
+                    p.contest_id_finished.append(player.id)
+                    p.currentContest.remove(contest.id)
         return
 
     contest.current_game = 0
@@ -151,7 +155,7 @@ async def manage_contest(contest: Contest, players: List[RemotePlayer]):
 
 
 async def start_contest(contest):
-    del all_current_contests[contest.id]
+    remove_contest_available(contest.id)
     await manage_contest(contest, copy.deepcopy(contest.participants))
 
 
@@ -160,9 +164,9 @@ async def create_contest(sid, form):
     contest = create_contest_handler(form)
     if contest:
         all_current_contests[contest.id] = contest
-        #    asyncio.create_task(run_at(contest.date, start_contest(contest)))
+        asyncio.create_task(run_at(contest.date, start_contest(contest)))
         result = Result(True, "successful", None)
-        await sio.emit("create_contest_result", to_json(result), to=sid)
+        await sio.emit("create_contest_result", to_json(result), sid)
     else:
         result = Result(False, "can not create contest try again", None)
         await sio.emit("create_contest_result", to_json(result), to=sid)
@@ -175,34 +179,27 @@ async def join_player_to_contest(sid, data):
     res = join_player_to_contest_handler(_id, player)
     if res:
         result = Result(True, "successful", res)
-        await sio.emit("join_player_to_contest_result", to_json(result), to=player.sid)
+        await sio.emit("join_player_to_contest_result", to_json(result), to=sid)
     else:
         result = Result(False, "can not join you should to take due in full constraints", None)
-        await sio.emit("join_player_to_contest_result", to_json(result), to=player.sid)
+        await sio.emit("join_player_to_contest_result", to_json(result), to=sid)
 
 
 @sio.event
 async def show_all_contests_available(sid):
-    #  res = all_current_contests
-    #  contests: List = []
-    # for key in res:
-    #    contests.append(res[key])
-
-    res = load_contest()
-
+    res = show_all_contests_available_handler()
     if res is not None:
         result = Result(True, "successful", res)
-        await sio.emit("show_all_contests_available_result", to_json(result), to=sid)
+        await sio.emit("show_all_contest_available_result", to_json(result), to=sid)
     else:
         result = Result(False, "do not exist any contest in server", None)
-        await sio.emit("show_all_contests_available_result", to_json(result), to=sid)
+        await sio.emit("show_all_contest_available_result", to_json(result), to=sid)
 
 
 @sio.event
 async def show_my_contests_finished(sid):
     player = get_player_by_sid(sid, all_player_connecting)
     res = show_finish_contest_handler(player)
-
     if res is not None:
         result = Result(True, "successful", res)
         await sio.emit("show_my_contests_finished_result", to_json(result), to=sid)
@@ -217,46 +214,43 @@ async def show_my_current_contests(sid):
     res = show_my_current_contests(player)
     if res is not None:
         result = Result(True, "successful", res)
-        await sio.emit("show_my_current_contests_result", to_json(result))
+        await sio.emit("show_my_current_contests_result", to_json(result),to=sid)
     else:
         result = Result(False, "can't show the current contest try again please", None)
-        await sio.emit("show_my_current_contests_result", to_json(result))
+        await sio.emit("show_my_current_contests_result", to_json(result),to=sid)
 
 
 @sio.event
-async def save(sid, _id):
-    player = get_player_by_sid(sid, all_player_connecting)
+async def save(sid, _id,player):
     res = save_game_handle(_id, player)
     if res:
         result = Result(True, "save is completed", None)
-        await sio.emit("save_result", to_json(result))
+        await sio.emit("save_result", to_json(result),to=sid)
     else:
         result = Result(False, "can't save this game try again please", None)
-        await sio.emit("save_result", to_json(result))
+        await sio.emit("save_result", to_json(result),to=sid)
 
 
 @sio.event
-async def show_games_saved(sid):
-    player = get_player_by_sid(sid, all_player_connecting)
+async def show_games_saved(sid,player):
     res = show_games_save_handle(player)
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("show_games_saved_result", to_json(result), to=player.sid)
+        await sio.emit("show_games_saved_result", to_json(result), to=sid)
     else:
         result = Result(False, "don't have any games saved", None)
-        await sio.emit("show_games_saved_result", to_json(result), to=player.sid)
+        await sio.emit("show_games_saved_result", to_json(result), to=sid)
 
 
 @sio.event
 async def load(sid, _id):
-    player = get_player_by_sid(sid, all_player_connecting)
     res = load_game_handle(_id)
     if res is not None:
         result = Result(True, 'successful', res)
-        await sio.emit("load_result", to_json(result), to=player.sid)
+        await sio.emit("load_result", to_json(result), to=sid)
     else:
         result = Result(False, "n't load this game", None)
-        await sio.emit("load_result", to_json(result), to=player.sid)
+        await sio.emit("load_result", to_json(result), to=sid)
 
 
 @sio.on('get_possible_moves')

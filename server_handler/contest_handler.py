@@ -5,6 +5,7 @@ from .form import Form
 from .helper import *
 from model.contest import *
 
+
 def create_contest_handler(form):
     form = Form.from_dict(form)
     contests = load_contest()
@@ -16,8 +17,8 @@ def create_contest_handler(form):
         if form.name == con.name:
             return None
     contest = Contest(new_id, form.name, form.date, form.mode)
-    rate_constraint = RatingConstraint(form.rate)
-    count_of_player = MaxParticipantsConstraint(form.count_of_player, 0)
+    rate_constraint = RatingConstraint(form.min_rate, form.max_rate)
+    count_of_player = MaxParticipantsConstraint(form.count_of_player)
     constraints = [rate_constraint, count_of_player]
     contest.add_constraints(constraints)
     contests.append(contest)
@@ -27,16 +28,25 @@ def create_contest_handler(form):
 
 def join_player_to_contest_handler(_id, player):
     contests: list = load_contest()
+    res = None
     for contest in contests:
         if contest.id == _id:
             res = contest.add_new_player(player)
-    if res:
+    if res is not None:
         players = load_players()
         for p in players:
             if p.id == player.id:
                 p.currentContest.append(_id)
-    save_contest(contests)
-    return res
+        save_contest(contests)
+        return True
+    return False
+
+
+def show_all_contests_available_handler():
+    contests = load_contest_available()
+    if len(contests) == 0:
+        return None
+    return contests
 
 
 def show_finish_contest_handler(playerx):

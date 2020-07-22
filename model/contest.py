@@ -1,4 +1,5 @@
 import datetime
+
 from .game import Mode
 from .international_game import *
 
@@ -6,20 +7,16 @@ from .international_game import *
 class Constraint:
     """An abstract interface"""
 
-    def is_valid(self, player: Player) -> bool:
+    def is_valid(self, *args, **kwargs) -> bool:
         pass
 
 
 class MaxParticipantsConstraint(Constraint):
-    def __init__(self, max_participant, num_of_participants):
+    def __init__(self, max_participant):
         self.max_participant = max_participant
-        self.num_of_participants = num_of_participants
 
-    def is_valid(self, player):
-        return self.num_of_participants + 1 <= self.max_participant
-
-    def ababa(self):
-        return "ababa"
+    def is_valid(self, player, number):
+        return number + 1 <= self.max_participant
 
 
 class NameConstraint(Constraint):
@@ -52,6 +49,10 @@ class DateConstraint(Constraint):
 
 class Contest:
     def __init__(self, _id, name, date: datetime.datetime, mode: Mode):
+
+        if datetime.date.today() >= date:
+            raise ValueError("you cant create a contest in the past")
+
         self.id = _id
         self.name = name
         self.date = date
@@ -62,28 +63,12 @@ class Contest:
         self.participants = []
         self.current_game = 0
 
-    @classmethod
-    def from_dict(cls, dictionary):
-        dictionary = deepcopy(dictionary)
-
-        games = []
-        participants = []
-
-        for game in dictionary['games']:
-            games.append(Game.from_dict(game))
-
-        for participant in dictionary['participants']:
-            participants.append(Player.from_dict(participant))
-
-        dictionary['participants'] = participants
-        dictionary['games'] = games
-        contest = Contest(None, None, None, None)
-        contest.__dict__ = dictionary
-        return contest
-
-    def add_new_player(self, player: Player) -> None:
+    def add_new_player(self, player: Player) -> bool:
         for constraint in self.constraints:
-            if not constraint.is_valid(player):
+            if isinstance(constraint, MaxParticipantsConstraint):
+                if not constraint.is_valid(player, len(self.participants)):
+                    return False
+            elif not constraint.is_valid(player):
                 return False
         self.participants.append(player)
         return True
