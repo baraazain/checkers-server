@@ -83,7 +83,7 @@ def save_games(games):
 
 def load_contest():
     with open('../contests.dat', 'rb') as file:
-        if os.path.getsize('../contest.dat') == 0:
+        if os.path.getsize('../contests.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -104,7 +104,7 @@ def save_contest_available(contests):
 
 def load_contest_available():
     with open('../contests_available.dat', 'rb') as file:
-        if os.path.getsize('../contest_available.dat') == 0:
+        if os.path.getsize('../contests_available.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -118,6 +118,7 @@ def remove_contest_available(_id):
     for contest in contests:
         if contest.id == _id:
             contests.remove(contest)
+            break
     save_contest_available(contests)
 
 
