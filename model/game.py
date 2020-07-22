@@ -56,6 +56,7 @@ class Game(ABC):
         self.mx = 0
         self.no_progress = Game.NO_PROGRESS_LIMIT
         self.messages = []
+        self.last_path = []
 
     @abstractmethod
     def init(self):

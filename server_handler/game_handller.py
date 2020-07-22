@@ -185,7 +185,9 @@ def apply_action_handle(game, path):
 
 
 def undo_handle(game):
-    game.undo()
+    for i in range(0, len(game.last_path), 1):
+        game.undo()
+
     return game
 
 

@@ -312,6 +312,7 @@ async def apply_action(sid, data):
         print(action)
     print("end")
 
+    game.last_path = path
     print("Before: ", game.current_turn)
     res1 = apply_action_handle(game, path)
     res2 = path
@@ -334,7 +335,7 @@ async def apply_action(sid, data):
 
 @sio.on('undo')
 async def undo(sid, data):
-    data = IdRequest.from_dict(json.loads(data))
+    data = IdRequest.from_dict(data)
     _id = data.id
 
     game = get_game_by_sid(_id, all_game_playing)
