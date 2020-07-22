@@ -192,3 +192,8 @@ def undo_handle(game):
 def join_handle(game, player):
     game.player2 = player
     return game
+
+
+def handle_send_message(game, message):
+    game.send_message(message)
+    return game.get_last_message()

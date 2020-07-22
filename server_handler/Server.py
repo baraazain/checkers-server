@@ -3,8 +3,10 @@ import asyncio
 import threading
 from typing import List
 
+from model.chat import Message
 from model.game import *
-from server_handler.Request import FirstButtonRequest, SecondButtonRequest, IdRequest, JoinRequest, WaitingGamesRequest
+from server_handler.Request import FirstButtonRequest, SecondButtonRequest, IdRequest, JoinRequest, WaitingGamesRequest, \
+    ChatRequest
 from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
 from server_handler.auth_handler import *
@@ -456,6 +458,24 @@ async def all_waiting_games(sid):
     else:
         result = Result(False, "Error", None)
         await sio.emit("all_waiting_games", to_json(result))
+
+
+@sio.on("chat")
+async def chat(sid, data):
+    data = ChatRequest.from_dict(data)
+    sent_message = data.message
+    id = data.id
+
+    game = get_game_by_sid(id, all_game_playing)
+
+    res = handle_send_message(game, sent_message)
+
+    if res is not None:
+        result = Result(True, 'successful', res)
+        await sio.emit("chat", to_json(result))
+    else:
+        result = Result(False, "Error", None)
+        await sio.emit("chat", to_json(result))
 
 
 if __name__ == '__main__':
