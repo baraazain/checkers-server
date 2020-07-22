@@ -258,4 +258,5 @@ class AlphaBetaSearch:
 
 
 def hint(game: Game) -> List[Action]:
-    return AlphaBetaSearch(GameState(game), pov=1 if game.current_turn == MAXIMIZER else 2, timeout=3).get_best_action()
+    return AlphaBetaSearch(GameState(game),
+                           pov=1 if game.current_turn == MAXIMIZER else 2, timeout=1, initial_depth=2).get_best_action()

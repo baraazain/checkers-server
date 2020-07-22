@@ -28,9 +28,9 @@ def main():
     # load_best_model()
     # # print(load(f))
     from model.international_game import InternationalGame
-    from ai.agent import DummyAgent, MonteCarloAgent, MiniMaxAgent
+    from ai.agent import DummyAgent, MonteCarloAgent, MiniMaxAgent, AlphaZero
     from model.actors import ConsolePlayer
-    game = InternationalGame(1, ConsolePlayer(1, "", ""), ConsolePlayer(2, "", ""), None)
+    game = InternationalGame(1, ConsolePlayer(2, "", ""), AlphaZero(2), None)
     # game = InternationalGame(1, DummyAgent(), MiniMaxAgent(pov=2, timeout=3), None)
     # game = InternationalGame.read()
     # from ai.modified_tree_search import Node, MCTree
@@ -44,6 +44,7 @@ def main():
     # print(game.grid[1][2].piece)
     # ans, piece = game.correct_capture(Action(game.grid[0][1], game.grid[2][3], game.player1))
     # print(ans)
+
     game.player1.on_start(game)
     game.player2.on_start(game)
     while not game.end():

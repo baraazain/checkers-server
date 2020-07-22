@@ -8,6 +8,7 @@ from typing import Optional, List
 
 import numpy as np
 import tensorflow.keras as tk
+import tensorflow as tf
 
 import ai.modified_tree_search as mts
 import ai.standard_tree_search as sts
@@ -145,10 +146,43 @@ class AlphaZero(Agent):
         self.mct = mts.MCTree(game_state, model)
 
     def on_update(self, action):
-        self.mct.update_root(action)
+        if isinstance(action, list):
+            for var in action:
+                self.mct.update_root(var)
+        else:
+            self.mct.update_root(action)
 
     def on_start(self, game):
         self.mct = mts.MCTree(GameState(deepcopy(game)), load_best_model())
 
     def act(self, game):
-        pass
+        with tf.device('/device:GPU:0'):
+            start_time = time.monotonic()
+            while time.monotonic() - start_time < self.simulation_limit:
+                self.mct.simulate()
+
+        pi, values = self.mct.get_AV(0)
+
+        root = self.mct.root
+        state_stack = deepcopy(self.mct.state_stack)
+
+        flip_flag = False
+        path = []
+        while not flip_flag:
+            # playing deterministically => always choose the maximum probability
+            actions = np.argwhere(pi == np.max(pi))
+
+            action_idx = np.random.choice(actions.ravel())
+
+            action_id, value = action_idx, values[action_idx]
+
+            action, flip_flag = self.mct[action_id]
+
+            path.append(action)
+
+            self.mct.update_root(action)
+
+        self.mct.root = root
+        self.mct.state_stack = state_stack
+
+        return path

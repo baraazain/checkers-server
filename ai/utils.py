@@ -6,6 +6,7 @@ from typing import Deque
 
 import numpy as np
 import tensorflow.keras as tk
+import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 
 import ai.config as config
@@ -70,20 +71,20 @@ def load_best_model() -> tk.models.Model:
 
     :return: AlphaZero neural network
     """
+    with tf.device('/device:GPU:0'):
+        print(f'loading version {config.CURRENT_VERSION}')
 
-    print(f'loading version {config.CURRENT_VERSION}')
+        model = build_alphazero_model((10, 10, 30), len(get_action_space()), 8, 64, config.REG_CONST)
 
-    model = build_alphazero_model((10, 10, 30), len(get_action_space()), 8, 64, config.REG_CONST)
+        if config.CURRENT_VERSION is not None:
+            model.load_weights(weights_folder + 'alphazero' + f" {config.CURRENT_VERSION:0>3}" + '.h5')
 
-    if config.CURRENT_VERSION is not None:
-        model.load_weights(weights_folder + 'alphazero' + f" {config.CURRENT_VERSION:0>3}" + '.h5')
+        model.compile(loss={'value_head': 'mean_squared_error',
+                            'policy_head': softmax_cross_entropy_with_logits},
+                      optimizer=tk.optimizers.Adam(lr=config.LEARNING_RATE),
+                      loss_weights={'value_head': 0.5, 'policy_head': 0.5})
 
-    model.compile(loss={'value_head': 'mean_squared_error',
-                        'policy_head': softmax_cross_entropy_with_logits},
-                  optimizer=tk.optimizers.Adam(lr=config.LEARNING_RATE),
-                  loss_weights={'value_head': 0.5, 'policy_head': 0.5})
-
-    return model
+        return model
 
 
 def save_model(model: tk.models.Model, name='alphazero', version=1):
