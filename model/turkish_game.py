@@ -562,7 +562,7 @@ class TurkishGame(Game):
             """
             if cur.piece is not None:
                 action.capture = cur.piece
-                cur.piece.dead = True
+                cur.piece.dead = 1
                 # self.removePiece(cur.piece)
                 cur.piece = None
                 break
@@ -652,7 +652,7 @@ class TurkishGame(Game):
         # in case of EAT
         if middle != dst and middle != src and middle.piece is not None:
             action.capture = middle.piece
-            middle.piece.dead = True
+            middle.piece.dead = 1
             middle.piece = None
             self.no_progress = self.NO_PROGRESS_LIMIT
 
@@ -669,7 +669,7 @@ class TurkishGame(Game):
             piece = action.capture
             if piece is not None:
                 piece.cell.piece = piece
-                piece.dead = False
+                piece.dead = 0
 
             if action.promote:
                 dst.set_type(Type.PAWN)
