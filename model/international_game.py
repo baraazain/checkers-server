@@ -2,7 +2,7 @@ import copy
 
 from .action import Action
 from .actors import Player
-from .game import Game
+from .game import Game, Mode
 from .grid import Grid
 from .piece import *
 
@@ -47,6 +47,7 @@ class InternationalGame(Game):
         super().__init__(*args, **kwargs)
         self.grid = Grid(10, 10)
         self.promote = False
+        self.mode = Mode.INTERNATIONAL
 
     # initialize the grid and add pieces to their respective array
     def init(self):

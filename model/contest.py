@@ -36,6 +36,8 @@ class RatingConstraint(Constraint):
         self.max = mx
 
     def is_valid(self, player: Player):
+        print(self.min, player.rate, self.max)
+        print(type(self.min), type(player.rate), type(self.max))
         return self.min <= player.rate <= self.max
 
 
@@ -50,8 +52,8 @@ class DateConstraint(Constraint):
 class Contest:
     def __init__(self, _id, name, date: datetime.datetime, mode: Mode):
 
-        if datetime.date.today() >= date:
-            raise ValueError("you cant create a contest in the past")
+        # if datetime.date.today() >= date.:
+        #    raise ValueError("you cant create a contest in the past")
 
         self.id = _id
         self.name = name
@@ -69,6 +71,9 @@ class Contest:
                 if not constraint.is_valid(player, len(self.participants)):
                     return False
             elif not constraint.is_valid(player):
+                return False
+        for p in self.participants:
+            if p.name == player.name:
                 return False
         self.participants.append(player)
         return True

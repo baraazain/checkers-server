@@ -2,7 +2,7 @@ import copy
 
 from .action import Action
 from .actors import Player
-from .game import Game
+from .game import Game, Mode
 from .grid import Grid
 from .piece import *
 
@@ -47,6 +47,7 @@ class TurkishGame(Game):
         super().__init__(*args, **kwargs)
         self.grid = Grid(8, 8)
         self.promote = None
+        self.mode = Mode.TURKISH
 
     def init(self):
         for i in range(1, 3):

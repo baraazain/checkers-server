@@ -34,7 +34,9 @@ def show_games_save_handle(player):
 
 
 def load_game_handle(_id):
+    print(type(id))
     if get_game_by_id(_id) is not None:
+        print("fuck")
         game = get_game_by_id(_id)
         return game
     else:
@@ -185,17 +187,10 @@ def apply_action_handle(game, path):
 
 
 def undo_handle(game):
-    for i in range(0, len(game.last_path), 1):
-        game.undo()
-
+    game.undo()
     return game
 
 
 def join_handle(game, player):
     game.player2 = player
     return game
-
-
-def handle_send_message(game, message):
-    game.send_message(message)
-    return game.get_last_message()

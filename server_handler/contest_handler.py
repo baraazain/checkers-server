@@ -33,12 +33,14 @@ def join_player_to_contest_handler(_id, player):
         if contest.id == _id:
             res = contest.add_new_player(player)
     if res is not None:
-        players = load_players()
-        for p in players:
-            if p.id == player.id:
-                p.currentContest.append(_id)
-        save_contest(contests)
-        return True
+        if res:
+            players = load_players()
+            for p in players:
+                if p.id == player.id:
+                    p.currentContest.append(_id)
+            save_contest(contests)
+            save_players(players)
+            return True
     return False
 
 
@@ -67,7 +69,6 @@ def show_current_contest_handler(playerx):
         if player.id == playerx.id:
             for _id in player.currentContest:
                 contests.append(get_contest_by_id(_id))
-
             return contests
     return None
 

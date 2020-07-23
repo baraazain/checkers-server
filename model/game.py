@@ -55,8 +55,7 @@ class Game(ABC):
         self.path = []
         self.mx = 0
         self.no_progress = Game.NO_PROGRESS_LIMIT
-        self.messages = []
-        self.last_path = []
+        self.mode = None
 
     @abstractmethod
     def init(self):
@@ -257,15 +256,6 @@ class Game(ABC):
             capture_cell = action.capture.cell
             copy_action.capture = self.grid[capture_cell.r][capture_cell.c].piece
         return copy_action
-
-    def send_message(self, message):
-        self.messages.append(message)
-
-    def get_last_message(self):
-        if len(self.messages) == 0:
-            return None
-
-        return self.messages[len(self.messages) - 1]
 
     @abstractmethod
     def undo(self):

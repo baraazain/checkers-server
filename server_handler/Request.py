@@ -45,13 +45,3 @@ class WaitingGamesRequest:
     @classmethod
     def from_dict(cls, data):
         return WaitingGamesRequest(**data)
-
-
-class ChatRequest:
-    def __init__(self, _id, message):
-        self.message = message
-        self.id = _id
-
-    @classmethod
-    def from_dict(cls, data):
-        return ChatRequest(**data)
