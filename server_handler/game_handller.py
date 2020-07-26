@@ -9,12 +9,12 @@ from model.international_game import *
 import json
 
 
-def save_game_handle(_id, player):
+def save_game_handle(game, player):
     players: list = load_players()
     state = False
     for p in players:
         if p.id == player.id:
-            p.games_id_saved.append(_id)
+            p.games_id_saved.append(game)
             state = True
     save_players(players)
     return state
@@ -25,22 +25,22 @@ def show_games_save_handle(player):
     games = []
     for p in players:
         if p.id == player.id:
-            for _id in p.games_id_saved:
-                games.append(get_game_by_id(_id))
+            for game in p.games_id_saved:
+                games.append(game)
     if games:
         return games
     else:
         return None
 
 
-def load_game_handle(_id):
-    print(type(id))
-    if get_game_by_id(_id) is not None:
-        print("fuck")
-        game = get_game_by_id(_id)
-        return game
-    else:
-        return None
+def load_game_handle(_id, player):
+    players = load_players()
+    for p in players:
+        if p.id == player.id:
+            for game in p.games_id_saved:
+                if game.id == _id:
+                    return game
+    return None
 
 
 def create_new_game_handle(game_info: GameInfo, all_game_playing, player1):
@@ -55,7 +55,7 @@ def create_new_game_handle(game_info: GameInfo, all_game_playing, player1):
     elif game_info.level == Level.MONTE_CARLO:
         player2 = MonteCarloAgent(3)
     elif game_info.level == Level.ALPHA_BETA:
-        player2 = MiniMaxAgent(2, 5)
+        player2 = MiniMaxAgent(2, 4, timeout=3)
     elif game_info.level == Level.ALPHA_ZERO:
         player2 = AlphaZero(4)
     game = None
@@ -209,3 +209,8 @@ def undo_handle(game):
 def join_handle(game, player):
     game.player2 = player
     return game
+
+
+def handle_send_message(game, message):
+    game.send_message(message)
+    return game.get_last_message()

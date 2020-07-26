@@ -162,14 +162,13 @@ class AlphaZero(Agent):
             while time.monotonic() - start_time < self.simulation_limit:
                 self.mct.simulate()
 
-        pi, values = self.mct.get_AV(0)
-
         root = self.mct.root
         state_stack = deepcopy(self.mct.state_stack)
 
         flip_flag = False
         path = []
         while not flip_flag:
+            pi, values = self.mct.get_AV(0)
             # playing deterministically => always choose the maximum probability
             actions = np.argwhere(pi == np.max(pi))
 

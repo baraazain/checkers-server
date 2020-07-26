@@ -3,6 +3,7 @@ import argparse
 import tensorflow as tf
 
 import ai.utils as ut
+from ai.agent import MiniMaxAgent
 from model.action import Action
 from model.utils import to_json
 
@@ -30,7 +31,7 @@ def main():
     from model.international_game import InternationalGame
     from ai.agent import DummyAgent, MonteCarloAgent, MiniMaxAgent, AlphaZero
     from model.actors import ConsolePlayer
-    game = InternationalGame(1, ConsolePlayer(2, "", ""), AlphaZero(2), None)
+    game = InternationalGame(1, ConsolePlayer(2, "", ""), MiniMaxAgent(2, timeout=2, initial_depth=3), None)
     # game = InternationalGame(1, DummyAgent(), MiniMaxAgent(pov=2, timeout=3), None)
     # game = InternationalGame.read()
     # from ai.modified_tree_search import Node, MCTree

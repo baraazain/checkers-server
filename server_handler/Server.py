@@ -1,12 +1,12 @@
 import copy
 import asyncio
-import threading
+import multiprocessing as mp
 from typing import List
 
 from model.chat import Message
 import ai.alpha_beta_search as absearch
 from model.game import *
-from server_handler.Request import FirstButtonRequest, SecondButtonRequest, IdRequest, JoinRequest, WaitingGamesRequest
+from server_handler.Request import FirstButtonRequest, SecondButtonRequest
 from server_handler.ResponseResult import Result
 from server_handler.game_handller import *
 from server_handler.auth_handler import *
@@ -109,8 +109,7 @@ async def manage_contest(contest: Contest, players: List[RemotePlayer]):
         winner: Player = contest.participants[0]
         print("The Winner is: " + winner.name + " " + winner.id)
         result = Result(True, 'winner in contest', winner)
-        playerrrs = load_players()
-        for p in playerrrs:
+        for p in load_players():
             for player in players:
                 await sio.emit("contest_end", "the winner is:", to_json(result),
                                to=all_player_connecting[player.id].sid)
@@ -127,8 +126,6 @@ async def manage_contest(contest: Contest, players: List[RemotePlayer]):
                        to=all_player_connecting[game.player1.id].sid)
         await sio.emit("notify_game_contest_start", to_json(result),
                        to=all_player_connecting[game.player2.id].sid)
-        # zaher request handle
-        # await start_game(game)
 
         win = game.get_winner()
         outcomes = [win]
@@ -180,9 +177,8 @@ async def create_contest(sid, form):
 
 @sio.event
 async def join_player_to_contest(sid, data):
-    _id = data['id']
     player = get_player_by_sid(sid, all_player_connecting)
-    res = join_player_to_contest_handler(_id, player)
+    res = join_player_to_contest_handler(data['id'], player)
     if res:
         result = Result(True, "successful", res)
         await sio.emit("join_player_to_contest_result", to_json(result), to=sid)
@@ -227,9 +223,10 @@ async def show_my_current_contests(sid):
 
 
 @sio.event
-async def save(sid, _id):
+async def save(sid, data):
+    game = get_game_by_sid(data['id'], all_game_playing)
     player = get_player_by_sid(sid, all_player_connecting)
-    res = save_game_handle(_id, player)
+    res = save_game_handle(game, player)
     if res:
         result = Result(True, "save is completed", None)
         await sio.emit("save_result", to_json(result), to=sid)
@@ -252,9 +249,12 @@ async def show_games_saved(sid):
 
 @sio.event
 async def load(sid, data):
-    _id = data['id']
-    res = load_game_handle(_id)
+    player = get_player_by_sid(sid, all_player_connecting)
+    res = load_game_handle(data['id'], player)
     if res is not None:
+        all_game_playing[res.id] = res
+        res.player1.on_start(res)
+        res.player2.on_start(res)
         result = Result(True, 'successful', res)
         await sio.emit("load_result", to_json(result), to=sid)
     else:
@@ -265,7 +265,6 @@ async def load(sid, data):
 @sio.on('get_possible_moves')
 async def get_possible_moves(sid, data):
     data = FirstButtonRequest.from_dict(data)
-    print("fuck adnan")
     _id = data.id
     r = data.r
     c = data.c
@@ -286,6 +285,9 @@ async def get_possible_moves(sid, data):
         print("\tEnd Path")
     print("End Paths")
 
+    if game.get_current_player().id != get_player_by_sid(sid, all_player_connecting).id:
+        res = []
+
     if res is not None:
         result = Result(True, 'successful', res)
         await sio.emit("get_possible_moves", to_json(result), to=sid)
@@ -295,12 +297,11 @@ async def get_possible_moves(sid, data):
 
 
 async def apply_bot(sid, game):
+
     player = game.get_current_player()
 
     if not isinstance(player, Agent):
         raise RuntimeError("Cant apply Human Move")
-
-    other = game.get_other_player()
 
     game, path = apply_action_handle(game, player.act(game))
     # print(res)
@@ -319,28 +320,16 @@ async def apply_action(sid, data):
     pairs = data.path
 
     game: Game = get_game_by_sid(_id, all_game_playing)
-    # game.init()
-    # print("HEEREEE: ")
-    # print(game.grid)
-    #
-    # print("PATHHHHH: ")
-    # for (r, c) in pairs:
-    #     print(r, c)
-    # print("ENDDDD")
 
     path = get_path(game, pairs)
 
-    # print("Start")
-    # for action in path:
-    #     print(action)
-    # print("end")
-
     game.last_path = path
-    # print("Before: ", game.current_turn)
-    res1, _ = apply_action_handle(game, path)
-    res2 = path
 
-    # print(res)
+    res1 = None
+    if game.get_current_player().id == get_player_by_sid(sid, all_player_connecting).id:
+        res1, _ = apply_action_handle(game, path)
+
+    res2 = path
 
     sid2 = -1
     if game.level == Level.HUMAN:
@@ -383,9 +372,7 @@ async def apply_action(sid, data):
 
 @sio.on('undo')
 async def undo(sid, data):
-    _id = data['id']
-
-    game = get_game_by_sid(_id, all_game_playing)
+    game = get_game_by_sid(data['id'], all_game_playing)
 
     print(game.grid)
     res = undo_handle(game)
@@ -397,6 +384,7 @@ async def undo(sid, data):
         sid2 = game.player2.sid
     else:
         sid1 = sid
+
     if res is not None:
         result = Result(True, 'successful', res)
 
@@ -412,7 +400,6 @@ async def undo(sid, data):
 @sio.event
 async def message(sid, data):
     print("sid says: ", data)
-    await sio.emit("message", "fuck zaher")
 
 
 @sio.on('create_new_game')
@@ -426,10 +413,10 @@ async def create_new_game(sid, data):
     #     print(res.grid)
 
     if res is not None:
-        if res.player2 is not None:
-            all_game_playing[res.id] = res
-        else:
+        if res.level == Level.HUMAN:
             all_game_waiting[res.id] = res
+        else:
+            all_game_playing[res.id] = res
         result = Result(True, 'successful', res)
         await sio.emit("create_new_game", to_json(result), room=sid)
     else:
@@ -439,10 +426,7 @@ async def create_new_game(sid, data):
 
 @sio.on('initialize_game')
 async def initialize_game(sid, data):
-    data = IdRequest.from_dict(data)
-    _id = data.id
-
-    game = get_game_by_sid(_id, all_game_playing)
+    game = get_game_by_sid(data['id'], all_game_playing)
 
     sid2 = -1
     if game.level == Level.HUMAN:
@@ -469,23 +453,16 @@ async def initialize_game(sid, data):
 async def hint(sid, data):
     game = get_game_by_sid(data['id'], all_game_playing)
 
-    result = Result(True, 'successful', absearch.hint(game) )
+    result = Result(True, 'successful', absearch.hint(game))
 
     await sio.emit("hint", to_json(result), room=sid)
 
 
 @sio.on("join")
 async def join(sid, data):
-    print(data)
-    # data = json.loads(data)
-    # data = IdRequest.from_dict(data)
-    data = JoinRequest.from_dict(data)
-    # data = JoinRequest.from_dict(json.loads(data))
+    player = get_player_by_sid(sid, all_player_connecting)
 
-    id = data.id
-    player = data.player
-
-    game = get_game_by_sid(id, all_game_waiting)
+    game = get_game_by_sid(data['id'], all_game_waiting)
     res = join_handle(game, player)
 
     sid1 = -1
@@ -494,14 +471,16 @@ async def join(sid, data):
         sid1 = game.player1.sid
         sid2 = game.player2.sid
 
+    if res.player1.sid == res.player2.sid:
+        res = None
+
     if res is not None:
-        all_game_waiting[res.id] = None
+        del all_game_waiting[res.id]
         all_game_playing[res.id] = res
         result = Result(True, 'successful', res)
         # Emit two players.
-
         if sid1 != -1:
-            await sio.emit("join", to_json(result), to=sid1)
+            await sio.emit("update_game", to_json(result), to=sid1)
         if sid2 != -1:
             await sio.emit("join", to_json(result), to=sid2)
     else:
@@ -513,40 +492,30 @@ async def join(sid, data):
 async def all_waiting_games(sid):
     games = []
 
-    for game in all_game_waiting:
+    for game in all_game_waiting.values():
         games.append(game)
 
-    res = WaitingGamesRequest(games)
-
-    if res is not None:
-        result = Result(True, 'successful', res)
-        await sio.emit("all_waiting_games", to_json(result), to=sid)
-    else:
-        result = Result(False, "Error", None)
-        await sio.emit("all_waiting_games", to_json(result), to=sid)
+    result = Result(True, 'successful', games)
+    await sio.emit("all_waiting_games", to_json(result), to=sid)
 
 
 @sio.on("chat")
 async def chat(sid, data):
-    data = ChatRequest.from_dict(data)
-    sent_message = data.message
-    id = data.id
+    game = get_game_by_sid(data['id'], all_game_playing)
 
-    game = get_game_by_sid(id, all_game_playing)
+    res = handle_send_message(game, data['msg'])
 
-    res = handle_send_message(game, sent_message)
-
-    sid1 = -1
-    sid2 = -1
-    if game.level == Level.HUMAN:
-        if sid1 != sid:
-            sid1 = game.player1.sid
-        if sid2 != sid:
-            sid2 = game.player2.sid
+    if game.level != Level.HUMAN:
+        res = None
 
     if res is not None:
+        sid1 = game.player1.sid
+        sid2 = game.player2.sid
+        if sid1 == sid:
+            sid1 = -1
+        if sid2 == sid:
+            sid2 = -1
         result = Result(True, 'successful', res)
-
         if sid1 != -1:
             await sio.emit("chat", to_json(result), to=sid1)
         if sid2 != -1:
@@ -555,6 +524,54 @@ async def chat(sid, data):
         result = Result(False, "Error", None)
         await sio.emit("chat", to_json(result), to=sid)
 
+
+@sio.event
+async def pov(sid, data):
+    game = get_game_by_sid(data['id'], all_game_playing)
+    if game is None:
+        game = get_game_by_sid(data['id'], all_game_waiting)
+    if game is not None:
+        sid1 = game.player1.sid
+        if game.player2 is not None:
+            sid2 = game.player2.sid
+        else:
+            sid2 = -1
+
+        if game.level == Level.HUMAN:
+            if sid1 == sid:
+                sid2 = -1
+            if sid2 == sid:
+                sid1 = -1
+        if sid1 != -1:
+            result = Result(True, 'successful', 1)
+            await sio.emit("pov", to_json(result), to=sid1)
+        if sid2 != -1:
+            result = Result(True, 'successful', 2)
+            await sio.emit("pov", to_json(result), to=sid2)
+
+
+@sio.event
+async def leave(sid, data):
+    game = get_game_by_sid(data['id'], all_game_playing)
+
+    del all_game_playing[data['id']]
+
+    if game.level != Level.HUMAN:
+        return
+
+    sid1 = game.player1.sid
+    sid2 = game.player2.sid
+    if sid1 == sid:
+        sid1 = -1
+    if sid2 == sid:
+        sid2 = -1
+
+    if sid1 != -1:
+        result = Result(True, 'successful', to_json(game.player1))
+        await sio.emit("game_over", to_json(result), to=sid1)
+    if sid2 != -1:
+        result = Result(True, 'successful', to_json(game.player2))
+        await sio.emit("game_over", to_json(result), to=sid2)
 
 if __name__ == '__main__':
     web.run_app(app, host="localhost", port=8080)

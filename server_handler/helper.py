@@ -37,7 +37,6 @@ def get_game_by_id(_id):
     for game in games:
         if game.id == _id:
             return game
-
     return None
 
 
@@ -50,8 +49,8 @@ def get_contest_by_id(_id):
 
 
 def load_players():
-    with open('../players.dat', 'rb') as file:
-        if os.path.getsize('../players.dat') == 0:
+    with open('players.dat', 'rb') as file:
+        if os.path.getsize('players.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -61,13 +60,13 @@ def load_players():
 
 
 def save_players(players):
-    with open('../players.dat', 'wb') as file:
+    with open('players.dat', 'wb') as file:
         pickle.dump(players, file)
 
 
 def load_games():
-    with open('../games.dat', 'rb') as file:
-        if os.path.getsize('../games.dat') == 0:
+    with open('games.dat', 'rb') as file:
+        if os.path.getsize('games.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -77,13 +76,13 @@ def load_games():
 
 
 def save_games(games):
-    with open('../games.dat', 'wb') as file:
+    with open('games.dat', 'wb') as file:
         pickle.dump(games, file)
 
 
 def load_contest():
-    with open('../contests.dat', 'rb') as file:
-        if os.path.getsize('../contests.dat') == 0:
+    with open('contests.dat', 'rb') as file:
+        if os.path.getsize('contests.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -93,18 +92,18 @@ def load_contest():
 
 
 def save_contest(contests):
-    with open('../contests.dat', 'wb') as file:
+    with open('contests.dat', 'wb') as file:
         pickle.dump(contests, file)
 
 
 def save_contest_available(contests):
-    with open('../contests_available.dat', 'wb') as file:
+    with open('contests_available.dat', 'wb') as file:
         pickle.dump(contests, file)
 
 
 def load_contest_available():
-    with open('../contests_available.dat', 'rb') as file:
-        if os.path.getsize('../contests_available.dat') == 0:
+    with open('contests_available.dat', 'rb') as file:
+        if os.path.getsize('contests_available.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -123,8 +122,8 @@ def remove_contest_available(_id):
 
 
 def print_players():
-    with open('../players.dat', 'rb') as file:
-        if os.path.getsize('../players.dat') == 0:
+    with open('players.dat', 'rb') as file:
+        if os.path.getsize('players.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -136,8 +135,8 @@ def print_players():
 
 
 def print_games():
-    with open('../games.dat', 'rb') as file:
-        if os.path.getsize('../games.dat') == 0:
+    with open('games.dat', 'rb') as file:
+        if os.path.getsize('games.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -149,8 +148,8 @@ def print_games():
 
 
 def print_contests():
-    with open('../contests.dat', 'rb') as file:
-        if os.path.getsize('../contests.dat') == 0:
+    with open('contests.dat', 'rb') as file:
+        if os.path.getsize('contests.dat') == 0:
             print('File is  empty')
             return []
         else:
@@ -162,10 +161,10 @@ def print_contests():
 
 
 def remove_players():
-    with open('../players.dat', 'wb') as file:
+    with open('players.dat', 'wb') as file:
         pickle.dump([], file)
 
 
 def remove_contests():
-    with open('../contests.dat', 'wb') as file:
+    with open('contests.dat', 'wb') as file:
         pickle.dump([], file)

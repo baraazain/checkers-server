@@ -21,6 +21,7 @@ class Node:
 class Edge:
     """Search tree edge.
     """
+
     def __init__(self, in_node: Node, out_node: Optional[Node], action: List[Action]):
         self.out_node = out_node
         self.in_node = in_node
@@ -30,6 +31,7 @@ class Edge:
 class TableItem:
     """Hash table item.
     """
+
     def __init__(self, node, evaluation=None, best_action=None):
         self.node = node
         self.evaluation = evaluation
@@ -68,14 +70,14 @@ class AlphaBetaSearch:
 
         res = 0
         for piece in game.white_pieces:
-            if not piece.dead and game.can_move(piece):
+            if not piece.dead:
                 if piece.type == Type.KING:
                     res += 100
                 else:
                     res += 1
 
         for piece in game.black_pieces:
-            if not piece.dead and game.can_move(piece):
+            if not piece.dead:
                 if piece.type == Type.KING:
                     res -= 100
                 else:
@@ -158,7 +160,7 @@ class AlphaBetaSearch:
                 best_action = edge.action
 
             if alpha >= beta:
-                # print("alpha cut!")
+                print("alpha cut!")
                 self.memo(node, alpha, None)
                 node.edges.sort(key=self._cmp_edges)
                 return alpha, None
@@ -202,7 +204,7 @@ class AlphaBetaSearch:
                 best_action = edge.action
 
             if alpha >= beta:
-                # print("beta cut!")
+                print("beta cut!")
                 self.memo(node, beta, None)
                 node.edges.sort(key=self._cmp_edges, reverse=True)
                 return beta, None
@@ -216,8 +218,8 @@ class AlphaBetaSearch:
         ret_action = None
         self.timeout_flag = False
         start_time = time.monotonic()
-
         while True:
+            print("thinking")
             self.transposition_table.clear()
             if self.pov == MAXIMIZER:
                 _, action = self.max(self.root, self.initial_depth + i, start_time)
@@ -229,7 +231,6 @@ class AlphaBetaSearch:
 
             ret_action = action
             i += 1
-
         if ret_action is None:
             edge: Edge = random.choice(self.root.edges)
             return edge.action
@@ -239,7 +240,6 @@ class AlphaBetaSearch:
     def update_root(self, path):
         if not self.root.edges:
             self.expand(self.root)
-
         t = ''.join(list(map(str, path)))
 
         for edge in self.root.edges:
