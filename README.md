@@ -7,7 +7,7 @@ The ultimate checkers game with rich features:
  4. Powerfull bots that uses smart search algorithms for best moves calclation:
      - Montecarlo search bot
      - Minimax search
-     - AlphaZero [arxiv](https://arxiv.org/abs/1712.01815) clone built with Tensorflow framework
+     - AlphaZero \[[arxiv]](https://arxiv.org/abs/1712.01815) clone built with Tensorflow framework
  5. Contests system
  6. Multiple Clients design
  7. In game chating system
